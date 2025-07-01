@@ -150,8 +150,15 @@ export default function VerifyEmail() {
         <div className="flex justify-between lg:justify-end items-center p-4 lg:p-6 space-x-4 lg:space-x-8 bg-white shadow-sm">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center">
-            <div className="w-8 h-8 bg-teal-500 rounded-sm flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
+            <div className=" rounded-sm flex items-center justify-center">
+              <Image
+                src="/images/logo_1.png"
+                alt="Pristin Capital Logo"
+                width={100}
+                height={30}
+                className="max-w-xs"
+                priority
+              />
             </div>
           </div>
           <div className="flex space-x-4 lg:space-x-8">
