@@ -167,30 +167,35 @@ export default function SignUp() {
       {/* Right Login Section */}
       <div className="w-full lg:w-2/3 flex flex-col bg-gray-50">
         {/* Header */}
-        <div className="flex justify-end items-center p-6 space-x-8 bg-white shadow-sm">
-          <button className="text-gray-600 hover:text-teal-600 transition-colors font-medium">
-            About
-          </button>
-          <button className="text-gray-600 hover:text-teal-600 transition-colors font-medium">
-            Help
-          </button>
+        <div className="flex justify-between lg:justify-end items-center p-4 lg:p-6 space-x-4 lg:space-x-8 bg-white shadow-sm">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center">
+            <div className=" rounded-sm flex items-center justify-center">
+              <Image
+                src="/images/logo_1.png"
+                alt="Pristin Capital Logo"
+                width={100}
+                height={30}
+                className="max-w-xs"
+                priority
+              />
+            </div>
+          </div>
+          <div className="flex space-x-4 lg:space-x-8">
+            <button className="text-gray-600 hover:text-teal-600 transition-colors font-medium text-sm lg:text-base">
+              About
+            </button>
+            <button className="text-gray-600 hover:text-teal-600 transition-colors font-medium text-sm lg:text-base">
+              Help
+            </button>
+          </div>
         </div>
 
         {/* Main Form Container */}
-        <div className="flex-1 flex items-center justify-center px-6 py-8">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-4 sm:py-8">
           <div className="w-full max-w-lg">
-            {/* Logo for mobile */}
-            <div className="lg:hidden flex items-center justify-center space-x-3 mb-8">
-              <div className="w-10 h-10 bg-teal-500 rounded-sm flex items-center justify-center">
-                <span className="text-white font-bold text-xl">P</span>
-              </div>
-              <span className="text-xl font-medium text-gray-800">
-                Pristin Capital
-              </span>
-            </div>
-
             {/* Form Card */}
-            <div className="bg-white rounded-lg shadow-xl p-12 border border-gray-100">
+            <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 lg:p-12 border border-gray-100">
               {/* Logo in form */}
               <div className="flex justify-center mb-8">
                 <Image
@@ -202,11 +207,11 @@ export default function SignUp() {
                 />
               </div>
 
-              <h2 className="text-3xl font-bold text-center text-gray-800 mb-3">
+              <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-3">
                 Welcome
               </h2>
 
-              <p className="text-center text-gray-600 mb-10">
+              <p className="text-center text-gray-600 mb-8 lg:mb-10 text-sm sm:text-base">
                 <span className="text-teal-600 cursor-pointer hover:underline font-medium">
                   Sign In
                 </span>
@@ -216,7 +221,7 @@ export default function SignUp() {
                 </span>
               </p>
 
-              <form className="space-y-8" onSubmit={handleSubmit}>
+              <form className="space-y-6 lg:space-y-8" onSubmit={handleSubmit}>
                 {/* Email/Phone Input */}
                 <div className="relative">
                   <label

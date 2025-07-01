@@ -95,20 +95,35 @@ export default function Login() {
       {/* Right Login Section */}
       <div className="w-full lg:w-2/3 flex flex-col bg-gray-50">
         {/* Header */}
-        <div className="flex justify-end items-center p-6 space-x-8 bg-white shadow-sm">
-          <button className="text-gray-600 hover:text-teal-600 transition-colors font-medium">
-            About
-          </button>
-          <button className="text-gray-600 hover:text-teal-600 transition-colors font-medium">
-            Help
-          </button>
+        <div className="flex justify-between lg:justify-end items-center p-4 lg:p-6 space-x-4 lg:space-x-8 bg-white shadow-sm">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center">
+            <div className=" rounded-sm flex items-center justify-center">
+              <Image
+                src="/images/logo_1.png"
+                alt="Pristin Capital Logo"
+                width={100}
+                height={30}
+                className="max-w-xs"
+                priority
+              />
+            </div>
+          </div>
+          <div className="flex space-x-4 lg:space-x-8">
+            <button className="text-gray-600 hover:text-teal-600 transition-colors font-medium text-sm lg:text-base">
+              About
+            </button>
+            <button className="text-gray-600 hover:text-teal-600 transition-colors font-medium text-sm lg:text-base">
+              Help
+            </button>
+          </div>
         </div>
 
         {/* Main Form Container */}
-        <div className="flex-1 flex items-center justify-center px-6 py-8">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-4 sm:py-8">
           <div className="w-full max-w-lg">
             {/* Form Card */}
-            <div className="bg-white rounded-lg shadow-xl p-12 border border-gray-100">
+            <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 lg:p-12 border border-gray-100">
               {/* Logo */}
               <div className="flex justify-center mb-8">
                 <Image
@@ -120,20 +135,20 @@ export default function Login() {
                 />
               </div>
 
-              <h2 className="text-3xl font-bold text-center text-gray-800 mb-3">
+              <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-3">
                 Welcome Back
               </h2>
 
-              <p className="text-center text-teal-600 mb-10">
+              <p className="text-center text-teal-600 mb-8 lg:mb-10 text-sm sm:text-base">
                 Sign up or log in to your account
               </p>
 
-              <form className="space-y-6" onSubmit={handleSubmit}>
+              <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
                 {/* Email Input */}
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-base font-medium text-gray-700 mb-3"
+                    className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3"
                   >
                     Email or Phone Number
                   </label>
@@ -144,7 +159,7 @@ export default function Login() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Samuel@thehiveincubator.com"
-                      className="w-full px-4 py-4 border-2 border-teal-500 rounded-lg focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none transition-all text-gray-700 placeholder-gray-400 bg-gray-50"
+                      className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-teal-500 rounded-lg focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none transition-all text-gray-700 placeholder-gray-400 bg-gray-50 text-sm sm:text-base"
                     />
                     <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
                       <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
@@ -168,7 +183,7 @@ export default function Login() {
                 <div>
                   <label
                     htmlFor="password"
-                    className="block text-base font-medium text-gray-700 mb-3"
+                    className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3"
                   >
                     Password
                   </label>
@@ -179,7 +194,7 @@ export default function Login() {
                       value={password}
                       onChange={handlePasswordChange}
                       placeholder="Enter your password"
-                      className={`w-full px-4 py-4 border-2 rounded-lg focus:ring-2 focus:ring-teal-200 outline-none transition-all text-gray-700 bg-gray-50 ${
+                      className={`w-full px-3 sm:px-4 py-3 sm:py-4 border-2 rounded-lg focus:ring-2 focus:ring-teal-200 outline-none transition-all text-gray-700 bg-gray-50 text-sm sm:text-base ${
                         loginError
                           ? "border-red-500 focus:border-red-500"
                           : "border-teal-500 focus:border-teal-500"
@@ -270,7 +285,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={!email || !password || isSubmitting}
-                  className={`w-full py-4 rounded-sm font-semibold text-lg transition-colors shadow-lg ${
+                  className={`w-full py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg transition-colors shadow-lg ${
                     email && password && !isSubmitting
                       ? "bg-slate-800 hover:bg-slate-900 text-white cursor-pointer"
                       : "bg-gray-300 text-gray-500 cursor-not-allowed"
@@ -280,10 +295,12 @@ export default function Login() {
                 </button>
 
                 {/* Divider */}
-                <div className="text-center text-gray-400 font-medium">or</div>
+                <div className="text-center text-gray-400 font-medium text-sm sm:text-base">
+                  or
+                </div>
 
                 {/* Sign Up Link */}
-                <p className="text-center text-gray-600 text-base">
+                <p className="text-center text-gray-600 text-sm sm:text-base">
                   Don't have Account?{" "}
                   <span
                     className="text-teal-600 cursor-pointer hover:underline font-semibold"
@@ -298,11 +315,11 @@ export default function Login() {
         </div>
 
         {/* Footer */}
-        <div className="bg-white text-teal-600 py-6 text-center shadow-xl">
-          <p className="text-sm mb-4">
+        <div className="bg-white text-teal-600 py-4 sm:py-6 text-center shadow-xl">
+          <p className="text-xs sm:text-sm mb-3 sm:mb-4 px-4">
             © 2025 FintechApp. All rights reserved.
           </p>
-          <div className="flex justify-center space-x-4">
+          <div className="flex justify-center space-x-3 sm:space-x-4">
             {/* Instagram */}
             <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
               <svg

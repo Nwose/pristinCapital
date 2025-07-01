@@ -182,20 +182,35 @@ export default function ForgotPassword() {
       {/* Right Form Section */}
       <div className="w-full lg:w-2/3 flex flex-col bg-gray-50">
         {/* Header */}
-        <div className="flex justify-end items-center p-6 space-x-8 bg-white shadow-sm">
-          <button className="text-gray-600 hover:text-teal-600 transition-colors font-medium">
-            About
-          </button>
-          <button className="text-gray-600 hover:text-teal-600 transition-colors font-medium">
-            Help
-          </button>
+        <div className="flex justify-between lg:justify-end items-center p-4 lg:p-6 space-x-4 lg:space-x-8 bg-white shadow-sm">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center">
+            <div className=" rounded-sm flex items-center justify-center">
+              <Image
+                src="/images/logo_1.png"
+                alt="Pristin Capital Logo"
+                width={100}
+                height={30}
+                className="max-w-xs"
+                priority
+              />
+            </div>
+          </div>
+          <div className="flex space-x-4 lg:space-x-8">
+            <button className="text-gray-600 hover:text-teal-600 transition-colors font-medium text-sm lg:text-base">
+              About
+            </button>
+            <button className="text-gray-600 hover:text-teal-600 transition-colors font-medium text-sm lg:text-base">
+              Help
+            </button>
+          </div>
         </div>
 
         {/* Main Form Container */}
-        <div className="flex-1 flex items-center justify-center px-6 py-8">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-4 sm:py-8">
           <div className="w-full max-w-lg">
             {/* Form Card */}
-            <div className="bg-white rounded-lg shadow-xl p-12 border border-gray-100">
+            <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 lg:p-12 border border-gray-100">
               {/* Step 1: Email Entry */}
               {currentStep === 1 && (
                 <>
@@ -218,19 +233,22 @@ export default function ForgotPassword() {
                     </div>
                   </div>
 
-                  <h2 className="text-3xl font-bold text-center text-gray-800 mb-3">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-3">
                     Forgotten Password
                   </h2>
 
-                  <p className="text-center text-teal-600 mb-10">
+                  <p className="text-center text-teal-600 mb-8 lg:mb-10 text-sm sm:text-base">
                     Enter your Email Address
                   </p>
 
-                  <form onSubmit={handleEmailSubmit} className="space-y-6">
+                  <form
+                    onSubmit={handleEmailSubmit}
+                    className="space-y-4 sm:space-y-6"
+                  >
                     <div>
                       <label
                         htmlFor="email"
-                        className="block text-base font-medium text-gray-700 mb-3"
+                        className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3"
                       >
                         Email/Phone Number
                       </label>
@@ -241,7 +259,7 @@ export default function ForgotPassword() {
                           value={email}
                           placeholder="Samuel@thehiveincubator.com"
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full px-4 py-4 border-2 border-teal-500 rounded-lg focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none transition-all text-gray-700 bg-gray-50"
+                          className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-teal-500 rounded-lg focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none transition-all text-gray-700 bg-gray-50 text-sm sm:text-base"
                         />
                         <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
                           <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
@@ -264,7 +282,7 @@ export default function ForgotPassword() {
                     <button
                       type="submit"
                       disabled={!email}
-                      className={`w-full py-4 rounded-sm font-semibold text-lg transition-colors shadow-lg ${
+                      className={`w-full py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg transition-colors shadow-lg ${
                         email
                           ? "bg-slate-800 hover:bg-slate-900 text-white cursor-pointer"
                           : "bg-gray-300 text-gray-500 cursor-not-allowed"
@@ -298,24 +316,27 @@ export default function ForgotPassword() {
                     </div>
                   </div>
 
-                  <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-4 sm:mb-6">
                     Forgotten Password
                   </h2>
 
-                  <p className="text-center text-teal-600 mb-10 leading-relaxed">
+                  <p className="text-center text-teal-600 mb-8 lg:mb-10 leading-relaxed text-sm sm:text-base px-2">
                     We've sent a 4-digit verification code to your email
                     address. Please check your inbox, then enter the code below
                     to continue.
                   </p>
 
-                  <form onSubmit={handleOtpSubmit} className="space-y-8">
+                  <form
+                    onSubmit={handleOtpSubmit}
+                    className="space-y-6 lg:space-y-8"
+                  >
                     <div>
-                      <label className="block text-base font-medium text-gray-700 mb-6 text-center">
+                      <label className="block text-sm sm:text-base font-medium text-gray-700 mb-4 sm:mb-6 text-center">
                         Enter OTP
                       </label>
 
                       {/* OTP Input Grid */}
-                      <div className="flex justify-center gap-3 mb-6">
+                      <div className="flex justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                         {otp.map((digit, index) => (
                           <input
                             key={index}
@@ -328,7 +349,7 @@ export default function ForgotPassword() {
                             onChange={(e) =>
                               handleOtpChange(index, e.target.value)
                             }
-                            className="w-16 h-16 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none transition-all bg-teal-100"
+                            className="w-12 h-12 sm:w-16 sm:h-16 text-center text-lg sm:text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none transition-all bg-teal-100"
                           />
                         ))}
                       </div>
@@ -581,11 +602,11 @@ export default function ForgotPassword() {
         </div>
 
         {/* Footer */}
-        <div className="bg-white text-teal-600 py-6 text-center shadow-xl">
-          <p className="text-sm mb-4">
+        <div className="bg-white text-teal-600 py-4 sm:py-6 text-center shadow-xl">
+          <p className="text-xs sm:text-sm mb-3 sm:mb-4 px-4">
             © 2025 FintechApp. All rights reserved.
           </p>
-          <div className="flex justify-center space-x-4">
+          <div className="flex justify-center space-x-3 sm:space-x-4">
             {/* Instagram */}
             <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
               <svg
