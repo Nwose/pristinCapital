@@ -256,6 +256,9 @@ export default function Login() {
                     </div>
                     <button
                       type="button"
+                      onClick={() =>
+                        (window.location.href = "/forgot-password")
+                      }
                       className="text-gray-500 hover:text-teal-600 transition-colors text-sm"
                     >
                       Forgotten Password?
@@ -282,7 +285,10 @@ export default function Login() {
                 {/* Sign Up Link */}
                 <p className="text-center text-gray-600 text-base">
                   Don't have Account?{" "}
-                  <span className="text-teal-600 cursor-pointer hover:underline font-semibold">
+                  <span
+                    className="text-teal-600 cursor-pointer hover:underline font-semibold"
+                    onClick={() => (window.location.href = "/sign-up")}
+                  >
                     Sign up
                   </span>
                 </p>

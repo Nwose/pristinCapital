@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function SignUp() {
   const [email, setEmail] = useState("");
@@ -443,9 +444,12 @@ export default function SignUp() {
                 {/* Login Link */}
                 <p className="text-center text-gray-600 text-base">
                   Already have an account?{" "}
-                  <span className="text-teal-600 cursor-pointer hover:underline font-semibold">
+                  <Link
+                    href="/login"
+                    className="text-teal-600 cursor-pointer hover:underline font-semibold"
+                  >
                     Log in
-                  </span>
+                  </Link>
                 </p>
               </form>
             </div>
