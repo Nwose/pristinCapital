@@ -43,18 +43,18 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     <div className="relative h-full">
       <div
         className={`${
-          isCollapsed ? "w-[165px]" : "w-64"
+          isCollapsed ? "w-20 md:w-[165px] xl:w-[200px]" : "w-64 xl:w-[272px]"
         } bg-[#1e293b] text-white flex flex-col transition-all duration-300 ease-in-out h-full pb-12`}
       >
         <button
           onClick={onToggle}
-          className="absolute -right-4 top-20 z-10 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 text-gray-600 hover:text-gray-900"
+          className="absolute -right-4 top-20 z-10 w-10 h-10 bg-white rounded-full flex items-center justify-center transition-all duration-200 text-gray-600 hover:text-gray-900"
         >
           {isCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
         </button>
 
         {/* Welcome Message */}
-        <div className="p-6 pb-8">
+        <div className="p-6 pb-4">
           <h2 className="text-lg font-medium text-white leading-tight">
             YOU'RE WELCOME
             <br />
@@ -64,7 +64,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 px-6">
-          <ul className="space-y-3">
+          <ul className="space-y-2 mb-4">
             {navigationItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -105,7 +105,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                       />
                     </span>
                     {!isCollapsed && (
-                      <span className="transition-opacity duration-200 text-[16px] font-[400]">
+                      <span className="transition-opacity duration-200 text-[14px] font-[400]">
                         {item.name}
                       </span>
                     )}
@@ -119,7 +119,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         {/* User Profile Section */}
         <div className="p-4 mt-auto">
           <div
-            className={`flex flex-col items-center mb-8 ${
+            className={`flex flex-col items-center mb-6 ${
               isCollapsed ? "justify-center" : ""
             }`}
           >
@@ -141,7 +141,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
           {/* Upgrade Button */}
           {!isCollapsed && (
-            <div className="relative mb-12 mr-6">
+            <div className="relative mb-6">
               <span className="absolute -top-3 left-0 rounded-r-lg rounded-tl-lg bg-yellow-500 text-[#FD2828] text-xs px-2 py-1 font-medium z-10">
                 <span className="bg-red-500 text-white px-1 rounded text-xs">
                   !
@@ -157,7 +157,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
           {/* Collapsed Upgrade Button */}
           {isCollapsed && (
-            <div className="mb-12 flex justify-center">
+            <div className="mb-4 flex justify-center">
               <button
                 className="w-12 h-12 relative focus:outline-none"
                 title="Upgrade Tier"
@@ -181,7 +181,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           )}
 
           {/* Logout Button */}
-          <div className="flex justify-center mb-8">
+          <div className="mb-0 flex justify-center">
             <button
               className={`${
                 isCollapsed ? "bg-transparent" : "w-full"

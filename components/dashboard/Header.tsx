@@ -2,21 +2,30 @@ import Image from "next/image";
 import { useState } from "react";
 import { FaSearch, FaUserCircle } from "react-icons/fa";
 import { BsFillBellFill } from "react-icons/bs";
+import { Menu } from "lucide-react"; // added for hamburger
 
-export default function Header() {
+export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const [searchValue, setSearchValue] = useState("");
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-2">
       <div className="flex items-center justify-between">
         {/* Logo */}
-        <div className="flex h-16 items-center">
-          <Image
-            src="/images/logo_1.png"
-            alt="Pristin Capital"
-            width={134}
-            height={60}
-            className=" w-auto"
-          />
+        <div className="flex items-center">
+          <button
+            className="md:hidden mr-4 text-[#001B2E]"
+            onClick={onMenuClick}
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <div className="flex h-16 items-center">
+            <Image
+              src="/images/logo_1.png"
+              alt="Pristin Capital"
+              width={134}
+              height={60}
+              className=" w-auto"
+            />
+          </div>
         </div>
 
         <div className="flex-1 flex justify-center px-6">
@@ -41,7 +50,7 @@ export default function Header() {
         </div>
 
         {/* User Profile Section */}
-        <div className="flex items-center gap-3 md:gap-5">
+        <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden">
             <Image
               src="/images/profile.jpg"
@@ -51,15 +60,23 @@ export default function Header() {
               className="object-cover w-full h-full"
             />
           </div>
-          <span className="text-[#001B2E] font-semibold hidden lg:block uppercase">
+          <span className="text-[#001B2E] font-semibold hidden lg:block uppercase mr-8">
             HI, SAMUEL
           </span>
-          <span className="text-[#001B2E] hidden md:block font-medium">
+          <span className="text-[#001B2E] hidden md:block font-medium mr-2">
             Support
           </span>
-          <FaUserCircle className="text-[#001B2E] w-6 h-6 hidden md:block" />
+          <div className="w-5 h-5 hidden md:block mr-1">
+            <Image
+              src="/images/icons/support-icon.png"
+              alt="Support Icon"
+              width={24}
+              height={24}
+              className="object-contain w-full h-full"
+            />
+          </div>
           <div className="relative">
-            <BsFillBellFill className="text-[#001B2E] w-6 h-6" />
+            <BsFillBellFill className="text-[#001B2E] w-5 h-5" />
             <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-600 rounded-full flex items-center justify-center text-[10px] text-white font-semibold">
               15
             </span>

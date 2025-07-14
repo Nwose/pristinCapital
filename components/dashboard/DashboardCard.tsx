@@ -30,21 +30,27 @@ export default function DashboardCard({
       : "text-blue-600";
 
   return (
-    <div className="bg-white rounded-lg border border-teal-200 p-6 relative">
+    <div className="bg-white rounded-lg border border-[#ccEaE9] p-4 sm:p-6 relative">
       {/* Top section */}
       <div className="flex items-start justify-between mb-4">
-        <h3 className="text-base font-semibold text-[#001B2E]">{title}</h3>
+        <h3 className="text-base font-semibold text-[#012638]">{title}</h3>
         {icon && <span className="text-[#001B2E] text-xl">{icon}</span>}
       </div>
 
       {/* Amount */}
-      <p className="text-3xl font-extrabold text-gray-900 mb-4">{amount}</p>
+      <p className="font-semibold text-[#00080B] text-2xl md:text-3xl mb-4 font-inter">
+        {amount}
+      </p>
 
       {/* Trend or subtitle */}
       {trend && (
         <div className="flex items-center gap-1">
-          <span className={`font-semibold ${trendColor}`}>{trend.value}</span>
-          <span className="text-gray-500 text-sm">{trend.text}</span>
+          <span className="text-base text-[#019893] font-inter font-normal">
+            {trend.value}
+          </span>
+          <span className="text-sm text-[#019893] font-inter font-normal">
+            {trend.text}
+          </span>
         </div>
       )}
 
@@ -54,7 +60,7 @@ export default function DashboardCard({
 
       {/* Action icon */}
       {hasAction && (
-        <CalendarCheck2 className="absolute bottom-6 right-6 text-[#001B2E] w-5 h-5" />
+        <CalendarCheck2 className="absolute bottom-4 sm:bottom-6 right-4 sm:right-6 text-[#001B2E] w-5 h-5" />
       )}
     </div>
   );

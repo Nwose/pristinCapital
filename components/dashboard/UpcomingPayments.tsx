@@ -39,7 +39,7 @@ const payments: {
 
 export default function UpcomingPayments() {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-teal-200 p-6">
+    <div className="bg-white rounded-lg shadow-sm border border-[#ccEaE9] p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-[#001B2E]">
           Upcoming Payments
@@ -53,7 +53,7 @@ export default function UpcomingPayments() {
         {payments.map((payment, index) => (
           <div
             key={payment.id}
-            className={`flex items-center justify-between pb-4 ${
+            className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 pb-4 ${
               index < payments.length - 1 ? "border-b border-gray-200" : ""
             }`}
           >
@@ -68,11 +68,13 @@ export default function UpcomingPayments() {
                 <p className="text-sm text-gray-500">{payment.dueDate}</p>
               </div>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center self-start sm:self-auto">
               <span className="font-semibold text-gray-900 mr-2">
                 {payment.amount}
               </span>
-              <ChevronRight className="text-gray-400 w-5 h-5" />
+              <span className="text-gray-400 w-5 h-5 flex items-center justify-center">
+                &rarr;
+              </span>
             </div>
           </div>
         ))}
