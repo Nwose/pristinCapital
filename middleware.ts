@@ -2,13 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  // Check if the user is accessing the root path
-  if (request.nextUrl.pathname === '/') {
-    // Redirect to login page
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // Continue with the request for all other paths
+  // Allow all requests to continue without redirecting to login
   return NextResponse.next()
 }
 

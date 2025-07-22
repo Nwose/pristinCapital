@@ -1,9 +1,12 @@
-import Image from "next/image";
+import React from "react";
+import LandingNav from "@/components/LandingNav";
+import Hero from "@/components/Hero";
 
 export default function Home() {
   return (
-    <div className="bg-[var(--color-brand-main)] text-[var(--color-light-4)] p-4">
-      Main brand background with light text
+    <div className="min-h-screen flex flex-col">
+      <LandingNav />
+      <Hero />
     </div>
   );
 }
