@@ -51,6 +51,9 @@ export default function DashboardLayout({
           <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 md:p-6 lg:p-8">
             {children}
           </main>
+          <div className="text-center text-gray-500 text-sm py-4 bg-white shadow-xl">
+            © 2025 Fintech Dashboard
+          </div>
         </div>
       </div>
       {isMobile && !isCollapsed && (
