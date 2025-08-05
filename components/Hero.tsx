@@ -25,7 +25,7 @@ export default function Hero() {
       <div className="relative z-10 flex flex-col md:flex-row items-center justify-between w-full max-w-7xl px-8 py-16 gap-8">
         {/* Left: Hero Text */}
         <div className="flex-1 max-w-2xl text-left">
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-8 text-white">
+          <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-8 text-white">
             <span className="text-[#1CC5AE]">Pristin</span>, Your Financial
             <br />
             Growth Platform — Built
