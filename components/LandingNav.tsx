@@ -1,36 +1,55 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function LandingNav() {
+  const pathname = usePathname();
+
   return (
     <nav className="sticky top-0 z-30 w-full bg-[#CDEBEB] flex items-center justify-between px-8 md:px-24 py-1">
       {/* Logo */}
       <div className="flex items-center gap-2">
-        <Image
-          src="/images/logo_d.png"
-          alt="Pristin Capital"
-          width={60.89}
-          height={63}
-        />
+        <Link href="/">
+          <Image
+            src="/images/logo_d.png"
+            alt="Pristin Capital"
+            width={60.89}
+            height={63}
+          />
+        </Link>
       </div>
 
       {/* Right side container for Nav Links and Buttons */}
       <div className="flex items-center gap-8">
         {/* Nav Links */}
         <div className="flex items-end gap-10">
-          <a
-            href="#"
-            className="text-[#012638] font-bold text-lg border-b-4 border-[#012638] pb-1"
+          <Link
+            href="/"
+            className={`text-[#012638] font-bold text-lg ${
+              pathname === "/" 
+                ? "border-b-4 border-[#012638] pb-1" 
+                : ""
+            }`}
             style={{ lineHeight: "1.2" }}
           >
             Home
-          </a>
-          <a href="#contact" className="text-[#012638] font-normal text-lg">
+          </Link>
+          <a href="#contact" className="text-[#012638] font-bold text-lg">
             Contact Us
           </a>
-          <a href="#about" className="text-[#012638] font-normal text-lg">
+          <Link
+            href="/about"
+            className={`text-[#012638] font-bold text-lg ${
+              pathname === "/about" 
+                ? "border-b-4 border-[#012638] pb-1" 
+                : ""
+            }`}
+          >
             About Us
-          </a>
+          </Link>
         </div>
         {/* Buttons */}
         <div className="flex items-center gap-4">
