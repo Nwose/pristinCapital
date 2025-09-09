@@ -9,7 +9,7 @@ export default function LandingNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky top-0 z-30 w-full bg-[#CDEBEB] flex items-center justify-between px-8 md:px-24 py-1">
+    <nav className="sticky top-0 z-30 w-full bg-[#CDEBEB] flex items-center justify-between px-8 md:px-24 py-4">
       {/* Logo */}
       <div className="flex items-center gap-2">
         <Link href="/">
@@ -23,28 +23,27 @@ export default function LandingNav() {
       </div>
 
       {/* Right side container for Nav Links and Buttons */}
-      <div className="flex items-center gap-8">
+      <div className="flex items-center gap-12">
         {/* Nav Links */}
-        <div className="flex items-end gap-10">
+        <div className="flex items-center gap-8">
           <Link
             href="/"
-            className={`text-[#012638] font-bold text-lg ${
+            className={`text-[#012638] font-semibold text-lg ${
               pathname === "/" 
-                ? "border-b-4 border-[#012638] pb-1" 
+                ? "border-b-2 border-[#012638] pb-1" 
                 : ""
             }`}
-            style={{ lineHeight: "1.2" }}
           >
             Home
           </Link>
-          <a href="#contact" className="text-[#012638] font-bold text-lg">
+          <a href="#contact" className="text-[#012638] font-semibold text-lg">
             Contact Us
           </a>
           <Link
             href="/about"
-            className={`text-[#012638] font-bold text-lg ${
+            className={`text-[#012638] font-semibold text-lg ${
               pathname === "/about" 
-                ? "border-b-4 border-[#012638] pb-1" 
+                ? "border-b-2 border-[#012638] pb-1" 
                 : ""
             }`}
           >
@@ -52,11 +51,10 @@ export default function LandingNav() {
           </Link>
         </div>
         {/* Buttons */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center">
           <a
             href="#get-started"
-            className="bg-[#012638] text-white px-8 py-2 rounded font-semibold text-lg hover:bg-[#019893] transition-colors"
-            style={{ boxShadow: "none" }}
+            className="bg-[#012638] text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-[#019893] transition-colors"
           >
             Get Started
           </a>

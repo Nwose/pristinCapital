@@ -49,16 +49,18 @@ export default function Hero() {
           </div>
         </div>
         {/* Right: Hero Image */}
-        <div className="flex-1 flex items-center justify-center relative mt-12 md:mt-0 min-w-[400px]">
-          <div className="bg-[#012638] rounded-3xl p-8 relative w-[500px] h-[350px] flex items-center justify-center">
-            <Image
-              src="/images/laptop.png"
-              alt="Dashboard Preview"
-              width={420}
-              height={260}
-              className="rounded-xl shadow-lg object-contain"
-              priority
-            />
+        <div className="flex-1 flex items-center justify-center relative mt-12 md:mt-0 min-w-[600px]">
+          <div className="bg-[#012638] rounded-3xl p-1 relative w-[800px] h-[500px] flex items-center justify-center">
+            <div className="mt-14 pt-8">
+              <Image
+                src="/images/laptop.png"
+                alt="Dashboard Preview"
+                width={1800}
+                height={1575}
+                className="rounded-xl shadow-lg object-contain pt-8"
+                priority
+              />
+            </div>
             {/* Live Dashboard Badge */}
             <div className="absolute top-8 right-8 bg-white px-6 py-3 rounded-lg shadow flex items-center gap-3">
               <span className="w-4 h-4 bg-green-500 rounded-full inline-block"></span>

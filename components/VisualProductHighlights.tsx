@@ -39,15 +39,20 @@ const VisualProductHighlights = () => {
         </div>
 
         {/* Laptop Mockup with Navigation */}
-        <div className="relative max-w-4xl mx-auto">
-          <div className="bg-gradient-to-br from-[#2C4A47] to-[#1E3330] rounded-2xl p-6 md:p-8 shadow-xl">
+        <div className="relative max-w-6xl mx-auto">
+          <div 
+            className="rounded-2xl p-1 md:p-1 shadow-xl h-[600px] flex items-center justify-center"
+            style={{
+              background: "linear-gradient(180deg, #012638 0%, #019893 100%)"
+            }}
+          >
             {/* Navigation Arrows */}
             <button
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-sm"
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-sm"
               aria-label="Previous"
             >
               <svg
-                className="w-5 h-5 text-white"
+                className="w-6 h-6 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -62,11 +67,11 @@ const VisualProductHighlights = () => {
             </button>
 
             <button
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-sm"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-sm"
               aria-label="Next"
             >
               <svg
-                className="w-5 h-5 text-white"
+                className="w-6 h-6 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -81,14 +86,14 @@ const VisualProductHighlights = () => {
             </button>
 
             {/* Laptop Image */}
-            <div className="flex justify-center">
+            <div className="flex justify-center mt-14 pt-8">
               <div className="relative">
                 <Image
                   src="/images/laptop.png"
                   alt={`${activeTab} Dashboard Preview`}
-                  width={600}
-                  height={375}
-                  className="max-w-full h-auto"
+                  width={1200}
+                  height={1050}
+                  className="max-w-full h-auto object-contain pt-8"
                   priority
                 />
               </div>
