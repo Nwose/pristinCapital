@@ -9,15 +9,17 @@ export default function LandingNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky top-0 z-30 w-full bg-[#CDEBEB] flex items-center justify-between px-8 md:px-24 py-1">
+    <nav className="sticky top-0 z-30 w-full bg-[#CDEBEB] flex items-center justify-between px-8 md:px-24 h-20 md:h-24">
       {/* Logo */}
-      <div className="flex items-center gap-2">
-        <Link href="/">
+      <div className="flex items-center h-full">
+        <Link href="/" className="flex items-center h-full">
           <Image
-            src="/images/logo_d.png"
+            src="/images/PristinLogo.svg"
             alt="Pristin Capital"
-            width={60.89}
-            height={63}
+            width={0} // allow Next.js to auto-scale
+            height={0}
+            sizes="100vw"
+            className="h-full w-auto object-contain"
           />
         </Link>
       </div>
@@ -29,28 +31,32 @@ export default function LandingNav() {
           <Link
             href="/"
             className={`text-[#012638] font-bold text-lg ${
-              pathname === "/" 
-                ? "border-b-4 border-[#012638] pb-1" 
-                : ""
+              pathname === "/" ? "border-b-4 border-[#012638] pb-1" : ""
             }`}
             style={{ lineHeight: "1.2" }}
           >
             Home
           </Link>
-          <a href="#contact" className="text-[#012638] font-bold text-lg">
+
+          <Link
+            href="/contact"
+            className={`text-[#012638] font-bold text-lg ${
+              pathname === "/contact" ? "border-b-4 border-[#012638] pb-1" : ""
+            }`}
+          >
             Contact Us
-          </a>
+          </Link>
+
           <Link
             href="/about"
             className={`text-[#012638] font-bold text-lg ${
-              pathname === "/about" 
-                ? "border-b-4 border-[#012638] pb-1" 
-                : ""
+              pathname === "/about" ? "border-b-4 border-[#012638] pb-1" : ""
             }`}
           >
             About Us
           </Link>
         </div>
+
         {/* Buttons */}
         <div className="flex items-center gap-4">
           <a

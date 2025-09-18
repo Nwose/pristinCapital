@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 
 const TIME_BEFORE_RESEND = 45; // seconds
 
-export default function VerifyEmail() {
+export default function VerifyPhone() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timeLeft, setTimeLeft] = useState(TIME_BEFORE_RESEND);
   const [isExpired, setIsExpired] = useState(false);
@@ -15,9 +15,9 @@ export default function VerifyEmail() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // get email from signup
-  const email =
-    typeof window !== "undefined" ? localStorage.getItem("user_email") : null;
+  // get phone from signup (make sure you save this earlier!)
+  const phone =
+    typeof window !== "undefined" ? localStorage.getItem("user_phone") : null;
 
   useEffect(() => {
     if (timeLeft > 0 && !isSuccess) {
@@ -68,14 +68,14 @@ export default function VerifyEmail() {
 
       try {
         const res = await fetch(
-          `https://pristin-asxu.onrender.com/api/v1/users/check_email_verification_otp/`,
+          `https://pristin-asxu.onrender.com/api/v1/users/check_phone_verification_otp/`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              email,
+              phone,
               otp: otpCode,
             }),
           }
@@ -93,18 +93,10 @@ export default function VerifyEmail() {
         } else {
           setIsError(true);
           setIsSubmitting(false);
-          console.warn("Verification failed:", data);
-          // alert("data from server:" + JSON.stringify(data));
-          const isAlreadyVerified = String(data?.error)
-            .toLowerCase()
-            .includes("already verified");
-          if (isAlreadyVerified) {
-            console.log("User already verified, proceeding to success state");
-            setIsSuccess(true);
-          }
+          console.warn("Phone verification failed:", data);
         }
       } catch (err) {
-        console.error("Verification error:", err);
+        console.error("Phone verification error:", err);
         setIsError(true);
         setIsSubmitting(false);
       }
@@ -112,7 +104,8 @@ export default function VerifyEmail() {
   };
 
   const handleContinue = () => {
-    window.location.href = "/verify-phone";
+    console.log("Navigating to dashboard...");
+    window.location.href = "/dashboard"; // ✅ after phone verification, go to dashboard
   };
 
   const handleResendCode = async () => {
@@ -125,20 +118,20 @@ export default function VerifyEmail() {
 
     try {
       const res = await fetch(
-        `https://pristin-asxu.onrender.com/api/v1/users/send_email_verification_otp/`,
+        `https://pristin-asxu.onrender.com/api/v1/users/check_phone_verification_otp/`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ phone }),
         }
       );
       if (!res.ok) {
-        console.error("Resend OTP failed");
+        console.error("Resend phone OTP failed");
       }
     } catch (err) {
-      console.error("Resend OTP error:", err);
+      console.error("Resend phone OTP error:", err);
     }
   };
 
@@ -165,7 +158,7 @@ export default function VerifyEmail() {
               src="/images/logo_1.png"
               alt="Pristin Capital Logo"
               width={200}
-              height={60}
+              height={90}
               className="max-w-xs"
               priority
             />
@@ -215,8 +208,8 @@ export default function VerifyEmail() {
                 <>
                   <div className="flex justify-center mb-8">
                     <Image
-                      src="/images/email_icon.png"
-                      alt="Email verification icon"
+                      src="/images/phone_icon.png"
+                      alt="Phone verification icon"
                       width={80}
                       height={80}
                       className="w-20 h-20"
@@ -224,13 +217,13 @@ export default function VerifyEmail() {
                   </div>
 
                   <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-4 sm:mb-6">
-                    Verify Your Email
+                    Verify Your Phone Number
                   </h2>
 
                   <p className="text-center text-teal-600 mb-8 lg:mb-10 leading-relaxed text-sm sm:text-base px-2">
-                    We've sent a 6-digit verification code to your email
-                    address. Please check your inbox, then enter the code below
-                    to continue.
+                    We've sent a 6-digit verification code to your phone number.
+                    Please check your SMS inbox and enter the code below to
+                    continue.
                   </p>
 
                   <form
@@ -334,10 +327,10 @@ export default function VerifyEmail() {
                     />
                   </div>
                   <h2 className="text-xl sm:text-2xl font-bold text-green-600 mb-4 sm:mb-6 leading-tight px-2">
-                    Your Account has been Successfully Created
+                    Phone Number Verified Successfully
                   </h2>
                   <p className="text-gray-600 mb-8 sm:mb-10 text-sm sm:text-base px-2">
-                    You can now Log In to your Dashboard with your email
+                    You can now access your dashboard.
                   </p>
                   <button
                     onClick={handleContinue}

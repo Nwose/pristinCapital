@@ -22,7 +22,7 @@ export default function Hero() {
         />
       </div>
       {/* Content */}
-      <div className="relative z-10 flex flex-col md:flex-row items-center justify-between w-full max-w-7xl px-8 py-16 gap-8">
+      <div className="relative z-10 flex flex-col md:flex-row items-center justify-between w-full max-w-[1200px] px-4 py-16 gap-8">
         {/* Left: Hero Text */}
         <div className="flex-1 max-w-2xl text-left">
           <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-8 text-white">
@@ -50,14 +50,14 @@ export default function Hero() {
         </div>
         {/* Right: Hero Image */}
         <div className="flex-1 flex items-center justify-center relative mt-12 md:mt-0 min-w-[400px]">
-          <div className="bg-[#012638] rounded-3xl p-8 relative w-[500px] h-[350px] flex items-center justify-center">
+          <div className="bg-[#012638] rounded-3xl p-4 relative w-[550px] h-[400px] flex items-center justify-center">
             <Image
               src="/images/laptop.png"
               alt="Dashboard Preview"
-              width={420}
-              height={260}
-              className="rounded-xl shadow-lg object-contain"
+              fill
+              className="rounded-xl shadow-lg object-cover"
               priority
+              sizes="(max-width: 850px) 200vw, 550px"
             />
             {/* Live Dashboard Badge */}
             <div className="absolute top-8 right-8 bg-white px-6 py-3 rounded-lg shadow flex items-center gap-3">

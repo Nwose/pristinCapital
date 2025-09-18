@@ -7,14 +7,16 @@ export default function ContactSection() {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
-    message: ""
+    message: "",
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -26,21 +28,17 @@ export default function ContactSection() {
     setFormData({
       fullName: "",
       email: "",
-      message: ""
+      message: "",
     });
   };
 
   return (
-    <section className="py-20 bg-white relative overflow-hidden">
+    <section id="contact" className="py-20 bg-white relative overflow-hidden">
       <div className="max-w-6xl mx-auto px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-gray-900 mb-4">
-            Contact Us
-          </h2>
-          <p className="text-xl text-gray-500">
-            Contact our Customer Care
-          </p>
+          <h2 className="text-5xl font-bold text-gray-900 mb-4">Contact Us</h2>
+          <p className="text-xl text-gray-500">Contact our Customer Care</p>
         </div>
 
         {/* Content Grid */}
