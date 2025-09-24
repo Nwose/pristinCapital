@@ -1,7 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import * as auth from "@/services/auth";
 
 const TIME_BEFORE_RESEND = 45; // seconds
 
@@ -14,10 +17,13 @@ export default function VerifyEmail() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const router = useRouter();
 
   // get email from signup
-  const email =
-    typeof window !== "undefined" ? localStorage.getItem("user_email") : null;
+  const savedUser = JSON.parse(
+    localStorage.getItem("last_registration_user") as string
+  );
+  const email = typeof window !== "undefined" ? savedUser?.email : null;
 
   useEffect(() => {
     if (timeLeft > 0 && !isSuccess) {
@@ -67,19 +73,7 @@ export default function VerifyEmail() {
       const otpCode = otp.join("");
 
       try {
-        const res = await fetch(
-          `https://pristin-asxu.onrender.com/api/v1/users/check_email_verification_otp/`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email,
-              otp: otpCode,
-            }),
-          }
-        );
+        const res = await auth.verifyEmailOTP(email || "", otpCode);
 
         let data: any = {};
         try {
@@ -112,7 +106,7 @@ export default function VerifyEmail() {
   };
 
   const handleContinue = () => {
-    window.location.href = "/verify-phone";
+    router.push("/verify-phone");
   };
 
   const handleResendCode = async () => {
@@ -124,16 +118,7 @@ export default function VerifyEmail() {
     inputRefs.current[0]?.focus();
 
     try {
-      const res = await fetch(
-        `https://pristin-asxu.onrender.com/api/v1/users/send_email_verification_otp/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-        }
-      );
+      const res = await auth.sendEmailOTP(email || "");
       if (!res.ok) {
         console.error("Resend OTP failed");
       }
@@ -320,6 +305,14 @@ export default function VerifyEmail() {
                         </span>
                       </p>
                     </div>
+                    <div className="text-center space-y-3">
+                      <Link
+                        href="/verify-phone"
+                        className="text-teal-600 hover:underline font-semibold"
+                      >
+                        Verify Phone
+                      </Link>
+                    </div>
                   </form>
                 </>
               ) : (
@@ -334,17 +327,17 @@ export default function VerifyEmail() {
                     />
                   </div>
                   <h2 className="text-xl sm:text-2xl font-bold text-green-600 mb-4 sm:mb-6 leading-tight px-2">
-                    Your Account has been Successfully Created
+                    Your email has been Successfully Verified
                   </h2>
                   <p className="text-gray-600 mb-8 sm:mb-10 text-sm sm:text-base px-2">
-                    You can now Log In to your Dashboard with your email
+                    You need to verify your phone number as well to continue.
                   </p>
-                  <button
-                    onClick={handleContinue}
+                  <Link
+                    href={"/verify-phone"}
                     className="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg shadow-lg"
                   >
-                    Continue
-                  </button>
+                    Verify Phone Number
+                  </Link>
                 </div>
               )}
             </div>

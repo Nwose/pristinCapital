@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import * as auth from "@/services/auth";
 
 const TIME_BEFORE_RESEND = 45; // seconds
 
@@ -16,8 +18,10 @@ export default function VerifyPhone() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // get phone from signup (make sure you save this earlier!)
-  const phone =
-    typeof window !== "undefined" ? localStorage.getItem("user_phone") : null;
+  const savedUser = JSON.parse(
+    localStorage.getItem("last_registration_user") as string
+  );
+  const phone = typeof window !== "undefined" ? savedUser?.phoneNumber : null;
 
   useEffect(() => {
     if (timeLeft > 0 && !isSuccess) {
@@ -67,19 +71,7 @@ export default function VerifyPhone() {
       const otpCode = otp.join("");
 
       try {
-        const res = await fetch(
-          `https://pristin-asxu.onrender.com/api/v1/users/check_phone_verification_otp/`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              phone,
-              otp: otpCode,
-            }),
-          }
-        );
+        const res = await auth.verifyPhoneOTP(phone || "", otpCode);
 
         let data: any = {};
         try {
@@ -117,16 +109,7 @@ export default function VerifyPhone() {
     inputRefs.current[0]?.focus();
 
     try {
-      const res = await fetch(
-        `https://pristin-asxu.onrender.com/api/v1/users/check_phone_verification_otp/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ phone }),
-        }
-      );
+      const res = await auth.sendPhoneOTP(phone || "");
       if (!res.ok) {
         console.error("Resend phone OTP failed");
       }
@@ -208,7 +191,7 @@ export default function VerifyPhone() {
                 <>
                   <div className="flex justify-center mb-8">
                     <Image
-                      src="/images/phone_icon.png"
+                      src="/images/email_icon.png"
                       alt="Phone verification icon"
                       width={80}
                       height={80}
@@ -312,6 +295,14 @@ export default function VerifyPhone() {
                           Log in
                         </span>
                       </p>
+                    </div>
+                    <div className="text-center space-y-3">
+                      <Link
+                        href="/verify-email"
+                        className="text-teal-600 hover:underline font-semibold"
+                      >
+                        Verify Email
+                      </Link>
                     </div>
                   </form>
                 </>

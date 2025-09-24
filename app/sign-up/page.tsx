@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import * as auth from "@/services/auth";
+import { interpretServerError } from "@/lib/utils";
 
 export default function SignUp() {
   const router = useRouter();
@@ -19,7 +21,7 @@ export default function SignUp() {
   const [showEmailError, setShowEmailError] = useState(false);
   const [showPasswordError, setShowPasswordError] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [apiError, setApiError] = useState("");
+  const [apiErrors, setApiErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState(false);
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -43,7 +45,7 @@ export default function SignUp() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    setApiError("");
+    setApiErrors([]);
     setSuccess(false);
 
     if (!isEmailFilled || !isEmailValid) {
@@ -64,35 +66,31 @@ export default function SignUp() {
     if (isFormValid) {
       setLoading(true);
       try {
-        const response = await fetch(
-          "https://pristin-asxu.onrender.com/api/v1/users/register/",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              first_name: firstName,
-              last_name: lastName,
-              phone_number: phoneNumber,
-              email: email,
-              password: password,
-            }),
-          }
+        const response = await auth.register(
+          email,
+          password,
+          firstName,
+          lastName,
+          phoneNumber
+        );
+
+        // please DO NOT put the password in the local storage
+        localStorage.setItem(
+          "last_registration_user",
+          JSON.stringify({
+            email,
+            firstName,
+            lastName,
+            phoneNumber,
+          })
         );
 
         const data = await response.json();
 
         if (response.ok) {
-          const otpResponse = await fetch(
-            "https://pristin-asxu.onrender.com/api/v1/users/send_email_verification_otp/",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email }),
-            }
-          );
+          const otpResponse = await auth.sendEmailOTP(email);
 
           if (otpResponse.ok) {
-            localStorage.setItem("user_email", email);
             setSuccess(true);
             setFirstName("");
             setLastName("");
@@ -102,13 +100,16 @@ export default function SignUp() {
             setIsTermsChecked(false);
             router.push("/verify-email");
           } else {
-            setApiError("Failed to send verification email.");
+            setApiErrors([
+              "Failed to send verification email.",
+              ...interpretServerError(await otpResponse.json()),
+            ]);
           }
         } else {
-          setApiError(data.detail || data.message || "Registration failed.");
+          setApiErrors(interpretServerError(data) || ["Registration failed."]);
         }
       } catch (error) {
-        setApiError("Network error. Please try again.");
+        setApiErrors(["Network Error. Please try again."]);
       } finally {
         setLoading(false);
       }
@@ -262,7 +263,13 @@ export default function SignUp() {
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       placeholder="John"
-                      className="w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-teal-500 focus:border-teal-500"
+                      className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${
+                        isEmailFilled && isEmailValid
+                          ? "border-green-500 focus:ring-green-500"
+                          : isEmailFilled && !isEmailValid
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-200 focus:ring-teal-500"
+                      }`}
                     />
                   </div>
                   <div>
@@ -274,7 +281,13 @@ export default function SignUp() {
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       placeholder="Doe"
-                      className="w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-teal-500 focus:border-teal-500"
+                      className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${
+                        isEmailFilled && isEmailValid
+                          ? "border-green-500 focus:ring-green-500"
+                          : isEmailFilled && !isEmailValid
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-200 focus:ring-teal-500"
+                      }`}
                     />
                   </div>
                 </div>
@@ -288,7 +301,13 @@ export default function SignUp() {
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="+234 812 345 6789"
-                    className="w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-teal-500 focus:border-teal-500"
+                    className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${
+                      isEmailFilled && isEmailValid
+                        ? "border-green-500 focus:ring-green-500"
+                        : isEmailFilled && !isEmailValid
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-200 focus:ring-teal-500"
+                    }`}
                   />
                 </div>
 
@@ -397,11 +416,12 @@ export default function SignUp() {
                   {loading ? "Creating Account..." : "Create Account"}
                 </button>
 
-                {apiError && (
-                  <div className="text-center text-red-500 font-medium mt-2">
-                    {apiError}
-                  </div>
-                )}
+                {!!apiErrors.length &&
+                  apiErrors.map((error, index) => (
+                    <div className="text-center text-red-500 font-medium mt-2">
+                      {error}
+                    </div>
+                  ))}
                 {success && (
                   <div className="text-center text-green-600 font-medium mt-2">
                     Account created successfully!
@@ -423,10 +443,48 @@ export default function SignUp() {
           </div>
         </div>
 
-        <div className="bg-white text-teal-600 py-6 text-center shadow-xl">
-          <p className="text-sm mb-4">
+        <div className="bg-white text-teal-600 py-4 sm:py-6 text-center shadow-xl">
+          <p className="text-xs sm:text-sm mb-3 sm:mb-4 px-4">
             © 2025 FintechApp. All rights reserved.
           </p>
+          <div className="flex justify-center space-x-3 sm:space-x-4">
+            {/* Instagram */}
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
+              <svg
+                className="w-[16px] h-[16px] text-teal-600"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+              </svg>
+            </div>
+            {/* Help */}
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
+              <svg
+                className="w-[16px] h-[16px] text-teal-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            {/* LinkedIn */}
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
+              <svg
+                className="w-[16px] h-[16px] text-teal-600"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
     </div>
