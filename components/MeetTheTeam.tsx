@@ -173,7 +173,7 @@ export default function MeetTheTeam() {
                 src="/images/Soomon.png"
                 alt="Samuel Solomon Utoh"
                 fill
-                className="object-cover"
+                className="object-cover object-top"
               />
             </div>
 
