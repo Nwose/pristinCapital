@@ -2,7 +2,16 @@
 
 import React from "react";
 
-const customers = [
+type Customer = {
+  id: string;
+  name: string;
+  email: string;
+  status: "Active" | "Inactive";
+  dateJoined: string;
+  kyc: "View" | "Rejected";
+};
+
+const customers: Customer[] = [
   {
     id: "CUST12345",
     name: "Ethan Harper",
@@ -46,7 +55,11 @@ function StatusBadge({ status }: StatusBadgeProps) {
   );
 }
 
-function KYCAction({ kyc }) {
+type KYCActionProps = {
+  kyc: "View" | "Rejected";
+};
+
+function KYCAction({ kyc }: KYCActionProps) {
   return (
     <span
       className={`text-sm font-medium ${

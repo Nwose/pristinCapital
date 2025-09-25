@@ -16,12 +16,23 @@ export default function VerifyPhone() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [phone, setPhone] = useState<string | null>(null);
 
-  // get phone from signup (make sure you save this earlier!)
-  const savedUser = JSON.parse(
-    localStorage.getItem("last_registration_user") as string
-  );
-  const phone = typeof window !== "undefined" ? savedUser?.phoneNumber : null;
+  // get phone from signup (client-only)
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const stored = window.localStorage.getItem("last_registration_user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setPhone(parsed?.phoneNumber ?? null);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to read last_registration_user from localStorage", e);
+      setPhone(null);
+    }
+  }, []);
 
   useEffect(() => {
     if (timeLeft > 0 && !isSuccess) {
@@ -122,17 +133,8 @@ export default function VerifyPhone() {
     <div className="min-h-screen flex bg-gray-50">
       {/* Left Hero Section */}
       <div className="hidden lg:flex lg:w-1/3 relative overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/images/loginImage.png')" }}
-        >
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.3) 10%, #012638 100%)",
-            }}
-          ></div>
+        <div className="absolute inset-0 bg-[url('/images/loginImage.png')] bg-cover bg-center">
+          <div className="absolute inset-0 bg-gradient-to-b from-white via-white/30 to-[#012638]"></div>
         </div>
 
         <div className="relative z-20 flex flex-col justify-between pt-[12px] text-white w-full">
@@ -231,6 +233,9 @@ export default function VerifyPhone() {
                             }
                             onKeyDown={(e) => handleKeyDown(index, e)}
                             onFocus={() => handleFocus(index)}
+                            aria-label={`Phone OTP digit ${index + 1}`}
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
                             className={`w-10 h-12 sm:w-14 sm:h-14 border-2 rounded-lg text-center text-lg sm:text-xl font-semibold text-gray-700 focus:outline-none transition-all ${
                               isError
                                 ? "border-red-500 bg-red-50"
