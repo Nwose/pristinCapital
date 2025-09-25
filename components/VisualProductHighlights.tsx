@@ -69,6 +69,7 @@ const VisualProductHighlights = () => {
           ))}
         </div>
 
+
         {/* Laptop Mockup with Slideshow */}
         <div className="relative max-w-4xl mx-auto">
           <div className="bg-gradient-to-br from-[#2C4A47] to-[#1E3330] rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl overflow-hidden">
@@ -80,6 +81,7 @@ const VisualProductHighlights = () => {
             >
               <svg
                 className="w-4 sm:w-5 h-4 sm:h-5 text-white"
+
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -94,12 +96,14 @@ const VisualProductHighlights = () => {
             </button>
 
             <button
+
               onClick={handleNext}
               className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 w-8 sm:w-10 h-8 sm:h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-sm z-10"
               aria-label="Next"
             >
               <svg
                 className="w-4 sm:w-5 h-4 sm:h-5 text-white"
+
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -135,6 +139,7 @@ const VisualProductHighlights = () => {
                   />
                 </motion.div>
               </AnimatePresence>
+
             </div>
           </div>
         </div>

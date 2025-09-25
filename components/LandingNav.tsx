@@ -13,6 +13,7 @@ export default function LandingNav() {
   const toggleMenu = () => setIsOpen(!isOpen);
 
   return (
+
     <nav className="sticky top-0 z-30 w-full bg-[#CDEBEB]">
       <div className="flex items-center justify-between px-6 md:px-14 h-20 md:h-24 max-w-[1300px] mx-auto">
         {/* Logo */}
@@ -35,10 +36,12 @@ export default function LandingNav() {
             href="/"
             className={`text-[#012638] font-bold text-lg ${
               pathname === "/" ? "border-b-4 border-[#012638] pb-1" : ""
+
             }`}
           >
             Home
           </Link>
+
 
           <Link
             href="/contact"
@@ -46,21 +49,26 @@ export default function LandingNav() {
               pathname === "/contact" ? "border-b-4 border-[#012638] pb-1" : ""
             }`}
           >
+
             Contact Us
           </Link>
 
           <Link
             href="/about"
+
             className={`text-[#012638] font-bold text-lg ${
               pathname === "/about" ? "border-b-4 border-[#012638] pb-1" : ""
+
             }`}
           >
             About Us
           </Link>
 
+
           <Link
             href="/coming-soon"
             className="bg-[#012638] text-white px-6 py-2 rounded font-semibold text-lg hover:bg-[#019893] transition-colors"
+
           >
             Get Started
           </Link>
