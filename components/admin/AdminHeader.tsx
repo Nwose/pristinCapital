@@ -3,8 +3,21 @@
 import React from "react";
 import Image from "next/image";
 import { Bell } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function AdminHeader() {
+  const pathname = usePathname();
+
+  const navLinks = [
+    { name: "Dashboard", href: "/admin/dashboard" },
+    { name: "Users", href: "/admin/users" },
+    { name: "Loans", href: "/admin/loans" },
+    { name: "Investments", href: "/admin/investments" },
+    { name: "KYC", href: "/admin/kyc" },
+    { name: "Penalty", href: "/admin/penalty" },
+  ];
+
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -17,29 +30,29 @@ export default function AdminHeader() {
             height={40}
             className="mr-2"
           />
-          <span className="text-xl font-bold text-gray-900">Pristin Capital</span>
+          <span className="text-xl font-bold text-gray-900">
+            Pristin Capital
+          </span>
         </div>
 
         {/* Navigation */}
         <nav className="flex items-center space-x-8">
-          <a href="/admin/dashboard" className="text-teal-600 font-semibold border-b-2 border-teal-600 pb-1">
-            Dashboard
-          </a>
-          <a href="/admin/users" className="text-gray-600 hover:text-gray-900">
-            Users
-          </a>
-          <a href="/admin/loans" className="text-gray-600 hover:text-gray-900">
-            Loans
-          </a>
-          <a href="/admin/investments" className="text-gray-600 hover:text-gray-900">
-            Investments
-          </a>
-          <a href="/admin/kyc" className="text-gray-600 hover:text-gray-900">
-            KYC
-          </a>
-          <a href="/admin/penalty" className="text-gray-600 hover:text-gray-900">
-            Penalty
-          </a>
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                className={`pb-1 ${
+                  isActive
+                    ? "text-teal-600 font-semibold border-b-2 border-teal-600"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Right side */}

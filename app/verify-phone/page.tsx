@@ -3,12 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import * as auth from "@/services/auth";
 
 const TIME_BEFORE_RESEND = 45; // seconds
 
-export default function VerifyEmail() {
+export default function VerifyPhone() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timeLeft, setTimeLeft] = useState(TIME_BEFORE_RESEND);
   const [isExpired, setIsExpired] = useState(false);
@@ -17,13 +16,12 @@ export default function VerifyEmail() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const router = useRouter();
 
-  // get email from signup
+  // get phone from signup (make sure you save this earlier!)
   const savedUser = JSON.parse(
     localStorage.getItem("last_registration_user") as string
   );
-  const email = typeof window !== "undefined" ? savedUser?.email : null;
+  const phone = typeof window !== "undefined" ? savedUser?.phoneNumber : null;
 
   useEffect(() => {
     if (timeLeft > 0 && !isSuccess) {
@@ -73,7 +71,7 @@ export default function VerifyEmail() {
       const otpCode = otp.join("");
 
       try {
-        const res = await auth.verifyEmailOTP(email || "", otpCode);
+        const res = await auth.verifyPhoneOTP(phone || "", otpCode);
 
         let data: any = {};
         try {
@@ -87,18 +85,10 @@ export default function VerifyEmail() {
         } else {
           setIsError(true);
           setIsSubmitting(false);
-          console.warn("Verification failed:", data);
-          // alert("data from server:" + JSON.stringify(data));
-          const isAlreadyVerified = String(data?.error)
-            .toLowerCase()
-            .includes("already verified");
-          if (isAlreadyVerified) {
-            console.log("User already verified, proceeding to success state");
-            setIsSuccess(true);
-          }
+          console.warn("Phone verification failed:", data);
         }
       } catch (err) {
-        console.error("Verification error:", err);
+        console.error("Phone verification error:", err);
         setIsError(true);
         setIsSubmitting(false);
       }
@@ -106,7 +96,8 @@ export default function VerifyEmail() {
   };
 
   const handleContinue = () => {
-    router.push("/verify-phone");
+    console.log("Navigating to dashboard...");
+    window.location.href = "/dashboard"; // ✅ after phone verification, go to dashboard
   };
 
   const handleResendCode = async () => {
@@ -118,12 +109,12 @@ export default function VerifyEmail() {
     inputRefs.current[0]?.focus();
 
     try {
-      const res = await auth.sendEmailOTP(email || "");
+      const res = await auth.sendPhoneOTP(phone || "");
       if (!res.ok) {
-        console.error("Resend OTP failed");
+        console.error("Resend phone OTP failed");
       }
     } catch (err) {
-      console.error("Resend OTP error:", err);
+      console.error("Resend phone OTP error:", err);
     }
   };
 
@@ -150,7 +141,7 @@ export default function VerifyEmail() {
               src="/images/logo_1.png"
               alt="Pristin Capital Logo"
               width={200}
-              height={60}
+              height={90}
               className="max-w-xs"
               priority
             />
@@ -201,7 +192,7 @@ export default function VerifyEmail() {
                   <div className="flex justify-center mb-8">
                     <Image
                       src="/images/email_icon.png"
-                      alt="Email verification icon"
+                      alt="Phone verification icon"
                       width={80}
                       height={80}
                       className="w-20 h-20"
@@ -209,13 +200,13 @@ export default function VerifyEmail() {
                   </div>
 
                   <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-4 sm:mb-6">
-                    Verify Your Email
+                    Verify Your Phone Number
                   </h2>
 
                   <p className="text-center text-teal-600 mb-8 lg:mb-10 leading-relaxed text-sm sm:text-base px-2">
-                    We've sent a 6-digit verification code to your email
-                    address. Please check your inbox, then enter the code below
-                    to continue.
+                    We've sent a 6-digit verification code to your phone number.
+                    Please check your SMS inbox and enter the code below to
+                    continue.
                   </p>
 
                   <form
@@ -307,10 +298,10 @@ export default function VerifyEmail() {
                     </div>
                     <div className="text-center space-y-3">
                       <Link
-                        href="/verify-phone"
+                        href="/verify-email"
                         className="text-teal-600 hover:underline font-semibold"
                       >
-                        Verify Phone
+                        Verify Email
                       </Link>
                     </div>
                   </form>
@@ -327,17 +318,17 @@ export default function VerifyEmail() {
                     />
                   </div>
                   <h2 className="text-xl sm:text-2xl font-bold text-green-600 mb-4 sm:mb-6 leading-tight px-2">
-                    Your email has been Successfully Verified
+                    Phone Number Verified Successfully
                   </h2>
                   <p className="text-gray-600 mb-8 sm:mb-10 text-sm sm:text-base px-2">
-                    You need to verify your phone number as well to continue.
+                    You can now access your dashboard.
                   </p>
-                  <Link
-                    href={"/verify-phone"}
+                  <button
+                    onClick={handleContinue}
                     className="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg shadow-lg"
                   >
-                    Verify Phone Number
-                  </Link>
+                    Continue
+                  </button>
                 </div>
               )}
             </div>

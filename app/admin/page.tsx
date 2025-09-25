@@ -30,9 +30,7 @@ export default function AdminWelcome() {
         </div>
 
         {/* Welcome Text */}
-        <h1 className="text-white text-3xl font-normal mb-2">
-          Welcome to
-        </h1>
+        <h1 className="text-white text-3xl font-normal mb-2">Welcome to</h1>
         <h2 className="text-slate-800 text-4xl font-bold">
           Pristin Admin Dashboard
         </h2>

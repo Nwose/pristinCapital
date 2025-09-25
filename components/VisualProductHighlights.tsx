@@ -1,33 +1,64 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 
 const VisualProductHighlights = () => {
   const [activeTab, setActiveTab] = useState("Investment Calculator");
 
   const tabs = ["Loan Application", "Investment Calculator", "Wallet Funding"];
 
+  // Slideshow images
+  const images = [
+    "/images/laptop.png",
+    "/images/laptop2.png",
+    "/images/laptop3.png",
+    "/images/laptop4.png",
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0); // -1 = left, 1 = right
+
+  const handlePrev = () => {
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const handleNext = () => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+
+  // Auto slide every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleNext();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <section className="py-16 px-4 bg-[#B8D4D1]">
+    <section className="py-12 sm:py-16 px-4 sm:px-6 bg-[#B8D4D1]">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold text-[#2C4A47] mb-4">
-            Visual Product Highlights
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#2C4A47] mb-3 sm:mb-4">
+            Product Highlights
           </h2>
-          <p className="text-lg text-[#5A7470] max-w-md mx-auto">
+          <p className="text-base sm:text-lg text-[#5A7470] max-w-md mx-auto">
             See how our platform works in action
           </p>
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex justify-center gap-4 mb-12 flex-wrap">
+        <div className="flex justify-center gap-3 sm:gap-4 mb-8 sm:mb-12 flex-wrap">
           {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-8 py-3 rounded-lg font-medium transition-all duration-300 ${
+              className={`px-4 sm:px-6 md:px-8 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-medium transition-all duration-300 ${
                 activeTab === tab
                   ? "bg-[#2C4A47] text-white shadow-lg"
                   : "bg-white/70 text-[#2C4A47] hover:bg-white hover:shadow-md"
@@ -38,21 +69,19 @@ const VisualProductHighlights = () => {
           ))}
         </div>
 
-        {/* Laptop Mockup with Navigation */}
-        <div className="relative max-w-6xl mx-auto">
-          <div 
-            className="rounded-2xl p-1 md:p-1 shadow-xl h-[600px] flex items-center justify-center"
-            style={{
-              background: "linear-gradient(180deg, #012638 0%, #019893 100%)"
-            }}
-          >
+
+        {/* Laptop Mockup with Slideshow */}
+        <div className="relative max-w-4xl mx-auto">
+          <div className="bg-gradient-to-br from-[#2C4A47] to-[#1E3330] rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl overflow-hidden">
             {/* Navigation Arrows */}
             <button
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-sm"
+              onClick={handlePrev}
+              className="absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 w-8 sm:w-10 h-8 sm:h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-sm z-10"
               aria-label="Previous"
             >
               <svg
-                className="w-6 h-6 text-white"
+                className="w-4 sm:w-5 h-4 sm:h-5 text-white"
+
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -67,11 +96,14 @@ const VisualProductHighlights = () => {
             </button>
 
             <button
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-sm"
+
+              onClick={handleNext}
+              className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 w-8 sm:w-10 h-8 sm:h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-sm z-10"
               aria-label="Next"
             >
               <svg
-                className="w-6 h-6 text-white"
+                className="w-4 sm:w-5 h-4 sm:h-5 text-white"
+
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -85,45 +117,32 @@ const VisualProductHighlights = () => {
               </svg>
             </button>
 
-            {/* Laptop Image */}
-            <div className="flex justify-center mt-14 pt-8">
-              <div className="relative">
-                <Image
-                  src="/images/laptop.png"
-                  alt={`${activeTab} Dashboard Preview`}
-                  width={1200}
-                  height={1050}
-                  className="max-w-full h-auto object-contain pt-8"
-                  priority
-                />
-              </div>
+            {/* Laptop Image Slideshow */}
+            <div className="flex justify-center relative h-[220px] xs:h-[280px] sm:h-[320px] md:h-[375px]">
+              <AnimatePresence initial={false} custom={direction}>
+                <motion.div
+                  key={currentIndex}
+                  custom={direction}
+                  initial={{ x: direction > 0 ? 300 : -300, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: direction > 0 ? -300 : 300, opacity: 0 }}
+                  transition={{ duration: 0.6, ease: "easeInOut" }}
+                  className="absolute"
+                >
+                  <Image
+                    src={images[currentIndex]}
+                    alt={`${activeTab} Dashboard Preview`}
+                    width={600}
+                    height={375}
+                    className="max-w-full h-auto rounded-md"
+                    priority
+                  />
+                </motion.div>
+              </AnimatePresence>
+
             </div>
           </div>
         </div>
-
-        {/* Optional: Tab Content Description */}
-        {/* <div className="text-center mt-8">
-          <div className="max-w-2xl mx-auto">
-            {activeTab === "Loan Application" && (
-              <p className="text-[#5A7470] text-lg">
-                Experience our streamlined loan application process with instant
-                approvals and competitive rates.
-              </p>
-            )}
-            {activeTab === "Investment Calculator" && (
-              <p className="text-[#5A7470] text-lg">
-                Plan your financial future with our advanced investment
-                calculator and portfolio management tools.
-              </p>
-            )}
-            {activeTab === "Wallet Funding" && (
-              <p className="text-[#5A7470] text-lg">
-                Seamlessly fund your wallet with multiple payment options and
-                instant transaction processing.
-              </p>
-            )}
-          </div>
-        </div> */}
       </div>
     </section>
   );
