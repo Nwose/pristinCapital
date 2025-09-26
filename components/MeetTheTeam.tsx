@@ -24,7 +24,7 @@ export default function MeetTheTeam() {
         {/* Team Members */}
         <div className="space-y-8 lg:space-y-12 flex flex-col items-center">
           {/* Member 1 */}
-          <div className="flex flex-col md:flex-row items-stretch w-full max-w-[1088px] min-h-[400px] md:h-[698px] bg-white border border-gray-200 rounded-[25px] md:rounded-[50px] overflow-hidden shadow">
+          <div className="flex flex-col md:flex-row items-stretch w-full max-w-[1088px] min-h-[400px] md:h-[698px] bg-white border border-gray-200  rounded-[80px_80px_30px_30px] md:rounded-[50px] overflow-hidden shadow">
             {/* Image */}
             <div className="w-full md:w-1/3 h-[300px] md:h-full relative overflow-hidden rounded-b-none md:rounded-r-[50px] md:rounded-l-none">
               <Image
@@ -62,9 +62,9 @@ export default function MeetTheTeam() {
           </div>
 
           {/* Member 2 */}
-          <div className="flex flex-col md:flex-row items-stretch w-full max-w-[1088px] min-h-[400px] md:h-[698px] bg-white border border-gray-200 rounded-[25px] md:rounded-[50px] overflow-hidden shadow">
+          <div className="flex flex-col md:flex-row items-stretch w-full max-w-[1088px] min-h-[400px] md:h-[698px] bg-white border border-gray-200  rounded-[80px_80px_30px_30px] md:rounded-[50px] overflow-hidden shadow">
             {/* Image */}
-            <div className="w-full md:w-1/3 h-[300px] md:h-full relative overflow-hidden rounded-b-none md:rounded-r-[50px] md:rounded-l-none">
+            <div className="w-full md:w-1/3 h-[300px] md:h-full relative overflow-hidden rounded-b-none md:rounded-r-[50px] md:rounded-l-none ">
               <Image
                 src="/images/Soomon.png"
                 alt="Samuel Solomon Utoh"
