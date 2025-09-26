@@ -56,6 +56,7 @@ export default function Hero() {
         </div>
 
         {/* Right: Hero Image */}
+
         <div className="flex-1 flex items-center justify-center md:justify-end relative mt-10 md:mt-0 w-full sm:w-[90%] md:w-auto">
           <div className="bg-[#012638] rounded-2xl sm:rounded-3xl p-4 sm:p-8 lg:p-12 relative w-full max-w-[550px] h-[250px] sm:h-[350px] lg:h-[400px] flex items-center justify-center">
             <Image
@@ -66,6 +67,7 @@ export default function Hero() {
               priority
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 550px"
             />
+
             {/* Live Dashboard Badge */}
             <div className="absolute top-4 right-4 sm:top-6 sm:right-6 bg-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow flex items-center gap-2 sm:gap-3">
               <span className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full inline-block"></span>
