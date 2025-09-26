@@ -87,12 +87,12 @@ export default function MeetTheTeam() {
                 An Investment professional versatile in various Investment class
                 and Stakeholder engagement. In addition, handling Business
                 Analysis and Accounts management for the firm. With a strong
-                background in Business Analytics, I've supported both private
+                background in Business Analytics, He has supported both private
                 equity firms and startups in designing and scaling platforms
                 that align with stakeholder priorities, budgets, and user needs.
-                My experience spans early-stage mentorship, strategic advisory
-                services, and connecting ventures with the right investor
-                networks.
+                His experience spans early-stage mentorship, strategic advisory
+                services, and connecting ventures with the right
+                investor networks.
               </p>
             </div>
           </div>
