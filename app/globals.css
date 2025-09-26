@@ -31,3 +31,7 @@
   --color-light-3: #f2f2f5;
   --color-light-4: #fafafc;
 }
+
+html {
+  scroll-behavior: smooth;
+}
