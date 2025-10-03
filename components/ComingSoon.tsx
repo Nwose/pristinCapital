@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+
 export default function ComingSoon() {
   return (
     <section className="relative w-full min-h-screen flex items-center justify-center overflow-hidden bg-[#012638]">
