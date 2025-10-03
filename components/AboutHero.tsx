@@ -1,5 +1,5 @@
 import React from "react";
-import Image from "next/image"
+import Image from "next/image";
 
 export default function AboutHero() {
   return (
@@ -26,12 +26,11 @@ export default function AboutHero() {
               Empowering financial freedom through smart, secure technology.
             </h2>
             <p className="text-base sm:text-lg leading-relaxed mb-4 sm:mb-6">
-              FinTech Co is a leading provider of innovative financial
-              solutions, dedicated to simplifying and securing financial
-              transactions for individuals and businesses. We leverage
-              cutting-edge technology to address complex financial challenges,
-              ensuring our users can achieve their financial goals with
-              confidence.
+              Pristin is a leading provider of innovative financial solutions,
+              dedicated to simplifying and securing financial transactions for
+              individuals and businesses. We leverage cutting-edge technology to
+              address complex financial challenges, ensuring our users can
+              achieve their financial goals with confidence.
             </p>
             <p className="text-base sm:text-lg leading-relaxed">
               Our commitment to transparency and customer satisfaction sets us
@@ -53,7 +52,7 @@ export default function AboutHero() {
             </div>
             {/* Floating badge */}
             <div className="absolute top-4 right-4 bg-white text-teal-600 px-4 py-2 rounded-lg font-bold shadow-lg">
-              FINTECH
+              PRISTIN
             </div>
           </div>
         </div>

@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useState } from "react";
 
+import { loginFirstFactor } from "@/services/auth";
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +20,16 @@ export default function Login() {
       setLoginError("");
 
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // await new Promise((resolve) => setTimeout(resolve, 1000));
+      try {
+        const response = await loginFirstFactor(email, password);
+        console.log("API Response:", response);
+      } catch (error) {
+        console.error("Login error:", error);
+        setLoginError("An error occurred during login. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
 
       // Demo validation - check for correct credentials
       if (

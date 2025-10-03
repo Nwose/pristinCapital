@@ -19,9 +19,12 @@ export default function Footer() {
       <div className="py-16 px-8">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-8">Subscribe</h2>
-          
+
           {/* Email Subscription Form */}
-          <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
+          <form
+            onSubmit={handleSubscribe}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6"
+          >
             <div className="relative">
               <input
                 type="email"
@@ -51,21 +54,21 @@ export default function Footer() {
           {/* Social Media Icons */}
           <div className="flex justify-center space-x-8 mb-16">
             <a
-              href="#"
+              href="https://www.linkedin.com/company/pristin-capital/"
               className="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center transition-colors"
               aria-label="LinkedIn"
             >
               <Linkedin className="w-6 h-6" />
             </a>
             <a
-              href="#"
+              href="https://x.com/pristincapital?s=21"
               className="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center transition-colors"
               aria-label="Twitter"
             >
               <Twitter className="w-6 h-6" />
             </a>
             <a
-              href="#"
+              href="https://www.instagram.com/pristincapital?igsh=MTN3MzJvbTVsemI3"
               className="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center transition-colors"
               aria-label="Instagram"
             >
@@ -98,9 +101,7 @@ export default function Footer() {
           </div>
 
           {/* Copyright */}
-          <div className="text-gray-300 text-sm">
-            2022. All right reserved.
-          </div>
+          <div className="text-gray-300 text-sm">2022. All right reserved.</div>
         </div>
       </div>
     </footer>
