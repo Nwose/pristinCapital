@@ -26,11 +26,12 @@ export default function AboutHero() {
               Empowering financial freedom through smart, secure technology.
             </h2>
             <p className="text-base sm:text-lg leading-relaxed mb-4 sm:mb-6">
-              Pristin is a leading provider of innovative financial solutions,
-              dedicated to simplifying and securing financial transactions for
-              individuals and businesses. We leverage cutting-edge technology to
-              address complex financial challenges, ensuring our users can
-              achieve their financial goals with confidence.
+              Pristin Capital is a leading provider of innovative financial
+              solutions, dedicated to simplifying and securing financial
+              transactions for individuals and businesses. We leverage
+              cutting-edge technology to address complex financial challenges,
+              ensuring our users can achieve their financial goals with
+              confidence.
             </p>
             <p className="text-base sm:text-lg leading-relaxed">
               Our commitment to transparency and customer satisfaction sets us
