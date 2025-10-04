@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -41,6 +41,15 @@ const testimonials = [
 
 export default function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Check screen size only on client
+    const checkScreen = () => setIsMobile(window.innerWidth < 768);
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
 
   const nextTestimonial = () => {
     setCurrentIndex((prev) => (prev + 1) % testimonials.length);
@@ -53,10 +62,9 @@ export default function TestimonialsSection() {
   };
 
   // Show 1 card on mobile, 2 on md+
-  const visibleTestimonials =
-    typeof window !== "undefined" && window.innerWidth < 768
-      ? [testimonials[currentIndex]]
-      : testimonials.slice(currentIndex, currentIndex + 2);
+  const visibleTestimonials = isMobile
+    ? [testimonials[currentIndex]]
+    : testimonials.slice(currentIndex, currentIndex + 2);
 
   return (
     <section className="py-20 bg-[#cceae9]">
@@ -90,9 +98,9 @@ export default function TestimonialsSection() {
 
           {/* Testimonials Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mx-0 sm:mx-12">
-            {visibleTestimonials.map((testimonial, index) => (
+            {visibleTestimonials.map((testimonial) => (
               <div
-                key={`${testimonial.id}-${currentIndex}-${index}`}
+                key={testimonial.id} // 🔑 use stable key
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 hover:shadow-lg transition-shadow"
               >
                 {/* User Info */}

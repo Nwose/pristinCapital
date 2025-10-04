@@ -27,17 +27,15 @@ export default function Hero() {
       <div className="relative z-10 flex flex-col md:flex-row items-center justify-between w-full max-w-[1300px] px-4 sm:px-6 lg:px-12 py-12 md:py-20 gap-10">
         {/* Left: Hero Text */}
         <div className="flex-1 max-w-2xl text-center md:text-left">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-snug sm:leading-tight mb-6 text-white">
-            <span className="text-[#1CC5AE]">Pristin</span>, Your Financial
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-snug sm:leading-tight mb-6 text-white break-words">
+            <span className="text-[#1CC5AE]">Pristin</span>, Your Financial{" "}
             <br className="hidden sm:block" />
-            Growth Platform — Built
-            <br className="hidden sm:block" />
-            for Speed, Trust, and
-            <br className="hidden sm:block" />
+            Growth Platform — Built <br className="hidden sm:block" />
+            for Speed, Trust, and <br className="hidden sm:block" />
             Control
           </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-white/80 mb-8 font-medium">
-            Simplify deposits, loans, and investments on a secure
+          <p className="text-base sm:text-lg lg:text-xl text-white/80 mb-8 font-medium break-words">
+            Simplify deposits, loans, and investments on a secure{" "}
             <br className="hidden sm:block" />
             and transparent digital platform.
           </p>
@@ -56,7 +54,6 @@ export default function Hero() {
         </div>
 
         {/* Right: Hero Image */}
-
         <div className="flex-1 flex items-center justify-center md:justify-end relative mt-10 md:mt-0 w-full sm:w-[90%] md:w-auto">
           <div className="bg-[#012638] rounded-2xl sm:rounded-3xl p-4 sm:p-8 lg:p-12 relative w-full max-w-[550px] h-[250px] sm:h-[350px] lg:h-[400px] flex items-center justify-center">
             <Image
