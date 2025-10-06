@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -43,9 +43,10 @@ export default function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileNav, setShowMobileNav] = useState(false);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
   useEffect(() => {
-    // Check screen size only on client
     const checkScreen = () => setIsMobile(window.innerWidth < 768);
     checkScreen();
     window.addEventListener("resize", checkScreen);
@@ -62,7 +63,32 @@ export default function TestimonialsSection() {
     );
   };
 
-  // Auto-hide mobile arrows after a few seconds
+  // Handle swipe gestures
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    setShowMobileNav(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const distance = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+
+    if (distance > minSwipeDistance) {
+      // swipe left → next
+      nextTestimonial();
+    } else if (distance < -minSwipeDistance) {
+      // swipe right → prev
+      prevTestimonial();
+    }
+
+    setShowMobileNav(true);
+  };
+
+  // Auto-hide arrows after a few seconds on mobile
   useEffect(() => {
     if (isMobile && showMobileNav) {
       const timer = setTimeout(() => setShowMobileNav(false), 3000);
@@ -70,7 +96,6 @@ export default function TestimonialsSection() {
     }
   }, [showMobileNav, isMobile]);
 
-  // Show 1 card on mobile, 2 on md+
   const visibleTestimonials = isMobile
     ? [testimonials[currentIndex]]
     : testimonials.slice(currentIndex, currentIndex + 2);
@@ -91,7 +116,9 @@ export default function TestimonialsSection() {
         {/* Testimonials Container */}
         <div
           className="relative"
-          onTouchStart={() => setShowMobileNav(true)}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           onClick={() => setShowMobileNav(true)}
         >
           {/* Navigation Arrows */}
