@@ -42,6 +42,7 @@ const testimonials = [
 export default function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [showMobileNav, setShowMobileNav] = useState(false);
 
   useEffect(() => {
     // Check screen size only on client
@@ -60,6 +61,14 @@ export default function TestimonialsSection() {
       (prev) => (prev - 1 + testimonials.length) % testimonials.length
     );
   };
+
+  // Auto-hide mobile arrows after a few seconds
+  useEffect(() => {
+    if (isMobile && showMobileNav) {
+      const timer = setTimeout(() => setShowMobileNav(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showMobileNav, isMobile]);
 
   // Show 1 card on mobile, 2 on md+
   const visibleTestimonials = isMobile
@@ -80,27 +89,49 @@ export default function TestimonialsSection() {
         </div>
 
         {/* Testimonials Container */}
-        <div className="relative">
+        <div
+          className="relative"
+          onTouchStart={() => setShowMobileNav(true)}
+          onClick={() => setShowMobileNav(true)}
+        >
           {/* Navigation Arrows */}
           <button
             onClick={prevTestimonial}
-            className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full shadow-md flex items-center justify-center hover:shadow-lg transition-shadow"
+            className={`absolute left-2 sm:left-0 top-1/2 -translate-y-1/2 z-10 
+            w-8 h-8 sm:w-12 sm:h-12 bg-white rounded-full shadow-md flex items-center 
+            justify-center hover:shadow-lg transition-all duration-300 
+            ${
+              isMobile
+                ? showMobileNav
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none"
+                : "opacity-100"
+            }`}
           >
-            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+            <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
           </button>
 
           <button
             onClick={nextTestimonial}
-            className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full shadow-md flex items-center justify-center hover:shadow-lg transition-shadow"
+            className={`absolute right-2 sm:right-0 top-1/2 -translate-y-1/2 z-10 
+            w-8 h-8 sm:w-12 sm:h-12 bg-white rounded-full shadow-md flex items-center 
+            justify-center hover:shadow-lg transition-all duration-300 
+            ${
+              isMobile
+                ? showMobileNav
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none"
+                : "opacity-100"
+            }`}
           >
-            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+            <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
           </button>
 
           {/* Testimonials Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mx-0 sm:mx-12">
             {visibleTestimonials.map((testimonial) => (
               <div
-                key={testimonial.id} // 🔑 use stable key
+                key={testimonial.id}
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 hover:shadow-lg transition-shadow"
               >
                 {/* User Info */}

@@ -23,7 +23,7 @@ export default function AboutHero() {
               About Us
             </h1>
             <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold mb-4 sm:mb-6">
-              Empowering financial freedom through smart, secure technology.
+              Empowering financial freedom through smart and secure technology.
             </h2>
             <p className="text-base sm:text-lg leading-relaxed mb-4 sm:mb-6">
               Pristin Capital is a leading provider of innovative financial
