@@ -1,67 +1,114 @@
 "use client";
+import React, { useState } from "react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
+import Link from "next/link";
 
-import React from "react";
-import { ArrowRight } from "lucide-react";
+const data = [
+  { name: "Jul 1", value: 2200 },
+  { name: "Jul 8", value: 3200 },
+  { name: "Jul 15", value: 2600 },
+  { name: "Jul 22", value: 4200 },
+  { name: "Jul 29", value: 3800 },
+];
 
-export default function DepositsWithdrawals() {
+const formatNaira = (n: number) => `₦${n.toLocaleString()}`;
+
+interface DepositsWithdrawalsProps {
+  isSubPage?: boolean; // if true, show dropdown instead of link
+}
+
+const DepositsWithdrawals: React.FC<DepositsWithdrawalsProps> = ({
+  isSubPage = false,
+}) => {
+  const [selectedRange, setSelectedRange] = useState("Last 30 Days");
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-      {/* Chart Section */}
-      <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">Deposits/Withdrawals</h3>
-            <div className="flex items-center space-x-2 mt-2">
-              <span className="text-2xl font-bold text-gray-900">₦5,643,870</span>
-              <span className="text-sm text-green-600 font-medium">+15%</span>
-            </div>
-            <span className="text-sm text-gray-500">Last 30 Days</span>
-          </div>
-          <button className="flex items-center text-blue-600 hover:text-blue-700 font-medium">
-            Check Full Analytics
-            <ArrowRight className="w-4 h-4 ml-1" />
-          </button>
+    <section className="bg-white border border-teal-50 rounded-lg p-6 mb-8">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800">
+            Deposits/Withdrawals
+          </h3>
+          <p className="text-2xl font-bold text-gray-900 mt-2">
+            {formatNaira(5643870)}
+          </p>
+          <p className="text-sm text-green-600 mt-1">
+            {selectedRange} <span className="font-medium">+15%</span>
+          </p>
         </div>
 
-        {/* Simple Chart Representation */}
-        <div className="h-64 bg-gray-50 rounded-lg flex items-end justify-center p-4">
-          <svg viewBox="0 0 400 200" className="w-full h-full">
-            <path
-              d="M 20 180 Q 50 120 80 140 Q 110 100 140 130 Q 170 90 200 110 Q 230 70 260 90 Q 290 50 320 70 Q 350 40 380 60"
-              stroke="#14b8a6"
-              strokeWidth="3"
-              fill="none"
-              className="drop-shadow-sm"
-            />
-            <circle cx="20" cy="180" r="4" fill="#14b8a6" />
-            <circle cx="80" cy="140" r="4" fill="#14b8a6" />
-            <circle cx="140" cy="130" r="4" fill="#14b8a6" />
-            <circle cx="200" cy="110" r="4" fill="#14b8a6" />
-            <circle cx="260" cy="90" r="4" fill="#14b8a6" />
-            <circle cx="320" cy="70" r="4" fill="#14b8a6" />
-            <circle cx="380" cy="60" r="4" fill="#14b8a6" />
-          </svg>
-        </div>
-
-        {/* Chart Labels */}
-        <div className="flex justify-between text-sm text-gray-500 mt-4">
-          <span>Jul 1</span>
-          <span>Jul 8</span>
-          <span>Jul 15</span>
-          <span>Jul 22</span>
-          <span>Jul 29</span>
+        <div className="flex items-center gap-4">
+          {!isSubPage ? (
+            // ✅ Show "Check Full Analytics" when NOT on subpage
+            <Link
+              href="/admin/dashboard/AnalyticsPage"
+              className="text-sm text-teal-600 hover:underline"
+            >
+              Check Full Analytics →
+            </Link>
+          ) : (
+            // ✅ Show dropdown when on subpage
+            <select
+              value={selectedRange}
+              onChange={(e) => setSelectedRange(e.target.value)}
+              className="border border-teal-200 text-sm text-gray-700 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <option>Last 7 Days</option>
+              <option>Last 14 Days</option>
+              <option>Last 30 Days</option>
+              <option>Last 90 Days</option>
+            </select>
+          )}
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="space-y-4">
-        <button className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors">
+      <div style={{ width: "100%", height: 300 }} className="mb-6">
+        <ResponsiveContainer>
+          <AreaChart
+            data={data}
+            margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+          >
+            <defs>
+              <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="#f0f4f3"
+            />
+            <XAxis dataKey="name" axisLine={false} tickLine={false} />
+            <Tooltip formatter={(value: any) => formatNaira(Number(value))} />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke="#14b8a6"
+              strokeWidth={3}
+              fill="url(#colorValue)"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <button className="px-4 py-2 rounded-md bg-teal-700 text-white text-sm hover:bg-teal-800">
           Add User
         </button>
-        <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold transition-colors">
+        <button className="px-4 py-2 rounded-md bg-teal-50 text-teal-700 text-sm hover:bg-teal-100">
           Create Investment Plan
         </button>
       </div>
-    </div>
+    </section>
   );
-}
+};
+
+export default DepositsWithdrawals;
