@@ -22,7 +22,7 @@ const items: FinancialItem[] = [
     growth: "+12.5%",
     color: "bg-emerald-50 border-emerald-100",
     buttonText: "View Breakdown",
-    buttonLink: "/admin/investment",
+    buttonLink: "/admin/dashboard/AnalyticsPage/InvestmentOverview",
     icon: <TrendingUp className="text-emerald-600 w-5 h-5" />,
   },
   {
@@ -32,7 +32,7 @@ const items: FinancialItem[] = [
     growth: "+8.2%",
     color: "bg-blue-50 border-blue-100",
     buttonText: "View More",
-    buttonLink: "/admin/loan",
+    buttonLink: "/admin/dashboard/AnalyticsPage/LoanAnalytics",
     icon: <DollarSign className="text-blue-600 w-5 h-5" />,
   },
   {
@@ -42,7 +42,7 @@ const items: FinancialItem[] = [
     growth: "+6.8%",
     color: "bg-purple-50 border-purple-100",
     buttonText: "View Portfolio",
-    buttonLink: "/admin/bond",
+    buttonLink: "/admin/dashboard/AnalyticsPage/BondPortfolioMetrics",
     icon: <PieChart className="text-purple-600 w-5 h-5" />,
   },
   {
@@ -52,7 +52,7 @@ const items: FinancialItem[] = [
     growth: "+15.7%",
     color: "bg-teal-50 border-teal-100",
     buttonText: "View Details",
-    buttonLink: "/admin/safelock",
+    buttonLink: "/admin/dashboard/AnalyticsPage/SafeLock",
     icon: <Lock className="text-teal-600 w-5 h-5" />,
   },
 ];

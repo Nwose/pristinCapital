@@ -17,7 +17,7 @@ export default function AnalyticsDashboard() {
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Full Analytics</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <GoBackButton />
         </div>
 
