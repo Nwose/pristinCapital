@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 type Customer = {
   id: string;
@@ -72,29 +72,47 @@ function KYCAction({ kyc }: KYCActionProps) {
 }
 
 export default function CustomerTable() {
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+
   return (
-    <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-      {/* Search + Filters */}
-      <div className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Search by name, email, or ID"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white hover:bg-gray-50">
-            Status
-          </button>
-          <button className="border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white hover:bg-gray-50">
-            Date Joined
-          </button>
+    <div className="bg-white shadow-sm rounded-lg overflow-hidden mx-auto mt-6 p-4">
+      {/* Search Input */}
+      <div className="flex flex-col gap-3">
+        <input
+          type="text"
+          placeholder="Search by name, email, or ID"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500"
+        />
+
+        {/* Dropdown Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Status Dropdown */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-teal-500"
+          >
+            <option value="">Filter by Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+
+          {/* Date Joined Dropdown */}
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-teal-500"
+          >
+            <option value="">Filter by Date Joined</option>
+            <option value="Newest">Newest First</option>
+            <option value="Oldest">Oldest First</option>
+          </select>
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto mt-5">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-100 text-gray-600 text-left font-medium">
             <tr>
@@ -123,6 +141,19 @@ export default function CustomerTable() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex justify-between items-center px-6 py-4  text-sm text-gray-600">
+        <p>Showing 1–3 of 3 customers</p>
+        <div className="flex items-center gap-2">
+          <button className="px-3 py-1 border rounded-md hover:bg-gray-50">
+            Prev
+          </button>
+          <button className="px-3 py-1 border rounded-md hover:bg-gray-50">
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

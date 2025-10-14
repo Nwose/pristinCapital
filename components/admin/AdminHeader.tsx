@@ -38,12 +38,15 @@ export default function AdminHeader() {
         {/* Navigation */}
         <nav className="flex items-center space-x-8">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href;
+            // Highlight if current path starts with the link href
+            const isActive =
+              pathname === link.href || pathname.startsWith(link.href + "/");
+
             return (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`pb-1 ${
+                className={`pb-1 transition ${
                   isActive
                     ? "text-teal-600 font-semibold border-b-2 border-teal-600"
                     : "text-gray-600 hover:text-gray-900"
