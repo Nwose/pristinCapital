@@ -37,27 +37,33 @@ export default function MeetTheTeam() {
 
             {/* Info */}
             <div
-              className={`${montserrat.className} w-full md:w-2/3 p-6 md:p-12 flex flex-col justify-center`}
+              className={`${montserrat.className} w-full md:w-2/3 p-6 md:p-12 flex flex-col justify-center relative bg-cover bg-center bg-no-repeat min-h-[400px]`}
+              style={{ backgroundImage: "url('/images/waterMarker.png')" }}
             >
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-                Folajomi Adegbulugbe (CEO)
-              </h3>
-              <p className="text-blue-900 font-semibold text-base md:text-lg mb-4 md:mb-6">
-                Entrepreneur | Innovator
-              </p>
-              <p className="text-gray-700 text-base md:text-lg leading-7 md:leading-11">
-                Folajomi Adegbulugbe is an accomplished entrepreneur and
-                business leader with a proven track record of building and
-                scaling ventures across various industries. As Director of Alles
-                Charis Gas Limited, he grew the company to over 250 employees
-                and 12 LPG retail outlets nationwide. He co-founded Pristin
-                Capital, launched successful startups like Jo's Buffet and
-                Gasify, and now leads The Hive Incubator, supporting startups in
-                Akure. Armed with dual Master's degrees in International
-                Business and Finance and currently pursuing an MBA at Imperial
-                College London, Folajomi brings strategic insight and innovative
-                leadership.
-              </p>
+              {/* lighter overlay so the image is visible */}
+              <div className="absolute inset-0 bg-white/20"></div>
+
+              <div className="relative z-10">
+                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+                  Folajomi Adegbulugbe (CEO)
+                </h3>
+                <p className="text-blue-900 font-semibold text-base md:text-lg mb-4 md:mb-6">
+                  Entrepreneur | Innovator
+                </p>
+                <p className="text-gray-700 text-base md:text-lg leading-7 md:leading-11">
+                  Folajomi Adegbulugbe is an accomplished entrepreneur and
+                  business leader with a proven track record of building and
+                  scaling ventures across various industries. As Director of
+                  Alles Charis Gas Limited, he grew the company to over 250
+                  employees and 12 LPG retail outlets nationwide. He co-founded
+                  Pristin Capital, launched successful startups like Jo’s Buffet
+                  and Gasify, and now leads The Hive Incubator, supporting
+                  startups in Akure. A graduate of Imperial College London with
+                  dual Master’s degrees in International Business and Finance,
+                  Folajomi brings strategic insight and innovative thinking to
+                  every venture he leads.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -75,8 +81,11 @@ export default function MeetTheTeam() {
 
             {/* Info */}
             <div
-              className={`${montserrat.className} w-full md:w-2/3 p-6 md:p-12 flex flex-col justify-center`}
+              className={`${montserrat.className} w-full md:w-2/3 p-6 md:p-12 flex flex-col justify-center relative bg-cover bg-center bg-no-repeat min-h-[400px]`}
+              style={{ backgroundImage: "url('/images/waterMarker.png')" }}
             >
+              {/* lighter overlay so the image is visible */}
+              <div className="absolute inset-0 bg-white/20"></div>
               <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                 Samuel Solomon Utoh
               </h3>

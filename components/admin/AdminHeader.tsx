@@ -60,10 +60,14 @@ export default function AdminHeader() {
 
         {/* Right side */}
         <div className="flex items-center space-x-4">
-          <button className="relative p-2 text-gray-600 hover:text-gray-900">
+          <Link
+            href="/admin/notifications"
+            className="relative p-2 text-gray-600 hover:text-gray-900"
+          >
             <Bell className="w-6 h-6" />
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-          </button>
+          </Link>
+
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-full overflow-hidden">
               <Image
