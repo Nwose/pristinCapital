@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
+// import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function WalletPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<"fund" | "withdraw">("fund");
   const [amount, setAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -46,7 +48,12 @@ export default function WalletPage() {
               <span className="text-gray-500 text-base font-medium">
                 Payment Method
               </span>
-              <button className="text-[#019893] text-base font-medium hover:underline">
+              <button
+                onClick={() =>
+                  router.push("/dashboard/wallet/transaction-history")
+                }
+                className="text-[#019893] text-base font-medium hover:underline"
+              >
                 Transaction History
               </button>
             </div>
