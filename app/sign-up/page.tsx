@@ -74,37 +74,49 @@ export default function SignUp() {
           phoneNumber
         );
 
+        const data = await response.json();
+
         // please DO NOT put the password in the local storage
         localStorage.setItem(
           "last_registration_user",
-          JSON.stringify({
-            email,
-            firstName,
-            lastName,
-            phoneNumber,
-          })
+          JSON.stringify(data)
         );
 
-        const data = await response.json();
 
         if (response.ok) {
-          const otpResponse = await auth.sendEmailOTP(email);
-
-          if (otpResponse.ok) {
-            setSuccess(true);
-            setFirstName("");
-            setLastName("");
-            setPhoneNumber("");
-            setEmail("");
-            setPassword("");
-            setIsTermsChecked(false);
-            router.push("/verify-email");
+          let otpResponse;
+          let verifyView = "";
+          if (!data.is_email_verified) {
+            // otpResponse = await auth.sendEmailOTP(email);
+            verifyView = "/verify-email";
+          } else if (!data.is_phone_verified) {
+            // otpResponse = await auth.sendPhoneOTP(phoneNumber);
+            verifyView = "/verify-phone";
           } else {
-            setApiErrors([
-              "Failed to send verification email.",
-              ...interpretServerError(await otpResponse.json()),
-            ]);
+            router.push("/login");
+            return;
           }
+
+          if (verifyView) {
+            router.push(verifyView);
+          }
+
+          // if (otpResponse.ok) {
+          //   setSuccess(true);
+          //   setFirstName("");
+          //   setLastName("");
+          //   setPhoneNumber("");
+          //   setEmail("");
+          //   setPassword("");
+          //   setIsTermsChecked(false);
+          //   router.push(verifyView);
+          // } else {
+          //   setApiErrors([
+          //     "Failed to send verification email.",
+          //     ...interpretServerError(await otpResponse.json()),
+          //   ]);
+          // }
+
         } else {
           setApiErrors(interpretServerError(data) || ["Registration failed."]);
         }
@@ -125,9 +137,8 @@ export default function SignUp() {
   }) => (
     <div className="flex items-center space-x-2 text-xs sm:text-sm">
       <div
-        className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center ${
-          isValid ? "bg-green-500" : "bg-red-500"
-        }`}
+        className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center ${isValid ? "bg-green-500" : "bg-red-500"
+          }`}
       >
         {isValid ? (
           <svg
@@ -156,9 +167,8 @@ export default function SignUp() {
         )}
       </div>
       <span
-        className={`${
-          isValid ? "text-green-600" : "text-red-500"
-        } text-xs sm:text-sm`}
+        className={`${isValid ? "text-green-600" : "text-red-500"
+          } text-xs sm:text-sm`}
       >
         {text}
       </span>
@@ -263,13 +273,12 @@ export default function SignUp() {
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       placeholder="John"
-                      className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${
-                        isEmailFilled && isEmailValid
-                          ? "border-green-500 focus:ring-green-500"
-                          : isEmailFilled && !isEmailValid
+                      className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${isEmailFilled && isEmailValid
+                        ? "border-green-500 focus:ring-green-500"
+                        : isEmailFilled && !isEmailValid
                           ? "border-red-500 focus:ring-red-500"
                           : "border-gray-200 focus:ring-teal-500"
-                      }`}
+                        }`}
                     />
                   </div>
                   <div>
@@ -281,13 +290,12 @@ export default function SignUp() {
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       placeholder="Doe"
-                      className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${
-                        isEmailFilled && isEmailValid
-                          ? "border-green-500 focus:ring-green-500"
-                          : isEmailFilled && !isEmailValid
+                      className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${isEmailFilled && isEmailValid
+                        ? "border-green-500 focus:ring-green-500"
+                        : isEmailFilled && !isEmailValid
                           ? "border-red-500 focus:ring-red-500"
                           : "border-gray-200 focus:ring-teal-500"
-                      }`}
+                        }`}
                     />
                   </div>
                 </div>
@@ -301,13 +309,12 @@ export default function SignUp() {
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="+234 812 345 6789"
-                    className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${
-                      isEmailFilled && isEmailValid
-                        ? "border-green-500 focus:ring-green-500"
-                        : isEmailFilled && !isEmailValid
+                    className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${isEmailFilled && isEmailValid
+                      ? "border-green-500 focus:ring-green-500"
+                      : isEmailFilled && !isEmailValid
                         ? "border-red-500 focus:ring-red-500"
                         : "border-gray-200 focus:ring-teal-500"
-                    }`}
+                      }`}
                   />
                 </div>
 
@@ -320,13 +327,12 @@ export default function SignUp() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="user@example.com"
-                    className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${
-                      isEmailFilled && isEmailValid
-                        ? "border-green-500 focus:ring-green-500"
-                        : isEmailFilled && !isEmailValid
+                    className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${isEmailFilled && isEmailValid
+                      ? "border-green-500 focus:ring-green-500"
+                      : isEmailFilled && !isEmailValid
                         ? "border-red-500 focus:ring-red-500"
                         : "border-gray-200 focus:ring-teal-500"
-                    }`}
+                      }`}
                   />
                   {showEmailError && (
                     <div className="absolute -top-12 left-0 bg-red-500 text-white text-sm px-3 py-2 rounded-lg">
@@ -344,13 +350,12 @@ export default function SignUp() {
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${
-                        password && isPasswordValid
-                          ? "border-green-500 focus:ring-green-500"
-                          : password && !isPasswordValid
+                      className={`w-full px-6 py-4 border rounded-lg bg-gray-50 focus:ring-2 focus:border-transparent outline-none ${password && isPasswordValid
+                        ? "border-green-500 focus:ring-green-500"
+                        : password && !isPasswordValid
                           ? "border-red-500 focus:ring-red-500"
                           : "border-gray-200 focus:ring-teal-500"
-                      }`}
+                        }`}
                     />
                     <button
                       type="button"
@@ -407,11 +412,10 @@ export default function SignUp() {
                 <button
                   type="submit"
                   disabled={!isFormValid || loading}
-                  className={`w-full py-4 rounded-sm font-semibold text-lg shadow-lg ${
-                    isFormValid && !loading
-                      ? "bg-slate-800 hover:bg-slate-900 text-white"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
+                  className={`w-full py-4 rounded-sm font-semibold text-lg shadow-lg ${isFormValid && !loading
+                    ? "bg-slate-800 hover:bg-slate-900 text-white"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
                 >
                   {loading ? "Creating Account..." : "Create Account"}
                 </button>
