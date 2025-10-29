@@ -69,7 +69,7 @@ export async function loginFirstFactor(email: string, password: string) {
 }
 
 export async function loginSecondFactor(tfa_token: string, otp: string) {
-  const url = "login/token/2ndfactor/";
+  const url = "login/token/2stfactor/";
   return await send("POST", url, {
     tfa_token: tfa_token,
     otp: otp,
