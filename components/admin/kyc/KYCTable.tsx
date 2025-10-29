@@ -86,8 +86,9 @@ export default function KYCTable() {
     credit: string;
     status: string;
   }) => {
-    // ✅ Fixed route path
-    router.push(`/admin/kyc/violation-details/${user.id}`);
+    // // ✅ Fixed route path
+    // router.push(`/admin/kyc/violation-details/${user.id}`);
+    router.push(`/admin/kyc/Review`);
   };
 
   return (
