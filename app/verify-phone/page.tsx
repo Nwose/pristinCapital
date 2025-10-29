@@ -3,7 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import * as auth from "@/services/auth";
+import { toast } from 'react-toastify';
 
 const TIME_BEFORE_RESEND = 45; // seconds
 
@@ -17,6 +19,8 @@ export default function VerifyPhone() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [phone, setPhone] = useState<string | null>(null);
+  const router = useRouter();
+  let hasSentInitialOTP = false;
 
   // get phone from signup (client-only)
   useEffect(() => {
@@ -25,12 +29,17 @@ export default function VerifyPhone() {
         const stored = window.localStorage.getItem("last_registration_user");
         if (stored) {
           const parsed = JSON.parse(stored);
-          setPhone(parsed?.phoneNumber ?? null);
+          // console.log("last_registration_user bro", parsed);
+          setPhone(parsed?.phone_number ?? null);
         }
       }
     } catch (e) {
       console.warn("Failed to read last_registration_user from localStorage", e);
       setPhone(null);
+    }
+    if (!hasSentInitialOTP) {
+      handleResendCode();
+      hasSentInitialOTP = true;
     }
   }, []);
 
@@ -93,6 +102,21 @@ export default function VerifyPhone() {
 
         if (res.ok) {
           setIsSuccess(true);
+          const needs_email_verification = data.need_email_verification;
+          if (needs_email_verification) {
+            console.log("User needs email verification, proceeding to email verification page");
+            toast.success('Your phone number has been verified. Please verify your email.');
+            setTimeout(
+              () => router.push("/verify-email"),
+              3000
+            );
+          } else {
+            toast.success('Your phone number has been verified.');
+            setTimeout(
+              () => router.push("/login"),
+              3000
+            );
+          }
         } else {
           setIsError(true);
           setIsSubmitting(false);
@@ -119,10 +143,58 @@ export default function VerifyPhone() {
     setCurrentInputIndex(0);
     inputRefs.current[0]?.focus();
 
+    const last_registration_user = window.localStorage.getItem("last_registration_user");
+    const parsed = last_registration_user ? JSON.parse(last_registration_user) : null;
+
+    const phone_to_send = phone || parsed?.phone_number || "";
+
     try {
-      const res = await auth.sendPhoneOTP(phone || "");
-      if (!res.ok) {
-        console.error("Resend phone OTP failed");
+      const res = await auth.sendPhoneOTP(phone_to_send);
+      const data = await res.json();
+      if (res.ok) {
+        console.log("Resend phone OTP success");
+      } else {
+        console.error("Resend phone OTP failed:", data);
+        if (data.error && data.error.includes("already verified")) {
+          console.error("Resend Failed because phone number is already verified");
+
+          if (!last_registration_user) {
+            toast.success('Your phone number has already been verified.');
+            setTimeout(
+              () => router.push("/login"),
+              3000
+            );
+          }
+
+          if (last_registration_user) {
+            parsed.is_phone_number_verified = true;
+            window.localStorage.setItem("last_registration_user", JSON.stringify(parsed));
+
+            const is_email_verified = parsed.is_email_verified;
+            if (!is_email_verified) {
+              console.log("User needs email verification, proceeding to email verification page");
+              toast.success('Your phone number has already been verified. Please verify your email.');
+              setTimeout(
+                () => router.push("/verify-email"),
+                3000
+              );
+            } else {
+              toast.success('Your phone number has already been verified.');
+              setTimeout(
+                () => router.push("/login"),
+                3000
+              );
+            }
+          } else {
+            toast.success('Your phone number has already been verified.');
+            setTimeout(
+              () => router.push("/login"),
+              3000
+            );
+          }
+        } else {
+          console.error("Resend Failed for some other reason");
+        }
       }
     } catch (err) {
       console.error("Resend phone OTP error:", err);
@@ -236,13 +308,12 @@ export default function VerifyPhone() {
                             aria-label={`Phone OTP digit ${index + 1}`}
                             inputMode="numeric"
                             autoComplete="one-time-code"
-                            className={`w-10 h-12 sm:w-14 sm:h-14 border-2 rounded-lg text-center text-lg sm:text-xl font-semibold text-gray-700 focus:outline-none transition-all ${
-                              isError
-                                ? "border-red-500 bg-red-50"
-                                : currentInputIndex === index
+                            className={`w-10 h-12 sm:w-14 sm:h-14 border-2 rounded-lg text-center text-lg sm:text-xl font-semibold text-gray-700 focus:outline-none transition-all ${isError
+                              ? "border-red-500 bg-red-50"
+                              : currentInputIndex === index
                                 ? "border-white bg-white shadow-lg ring-2 ring-teal-200"
                                 : "border-teal-200 bg-teal-50 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-                            }`}
+                              }`}
                             maxLength={1}
                           />
                         ))}
@@ -254,27 +325,30 @@ export default function VerifyPhone() {
                         </p>
                       )}
 
-                      <p className="text-center text-gray-600 mb-8">
-                        OTP expires in{" "}
-                        <span
-                          className={`font-semibold ${
-                            timeLeft <= 10 ? "text-red-500" : "text-teal-600"
-                          }`}
-                        >
-                          {timeLeft}
-                        </span>{" "}
-                        seconds
-                      </p>
+                      {
+                        timeLeft > 0 && (
+                          <p className="text-center text-gray-600 mb-8">
+                            OTP expires in{" "}
+                            <span
+                              className={`font-semibold ${timeLeft <= 10 ? "text-red-500" : "text-teal-600"
+                                }`}
+                            >
+                              {timeLeft}
+                            </span>{" "}
+                            seconds
+                          </p>
+                        )
+                      }
+
                     </div>
 
                     <button
                       type="submit"
                       disabled={!isOtpComplete || isExpired || isSubmitting}
-                      className={`w-full py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg shadow-lg ${
-                        isOtpComplete && !isExpired && !isSubmitting
-                          ? "bg-slate-800 hover:bg-slate-900 text-white cursor-pointer"
-                          : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      }`}
+                      className={`w-full py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg shadow-lg ${isOtpComplete && !isExpired && !isSubmitting
+                        ? "bg-slate-800 hover:bg-slate-900 text-white cursor-pointer"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        }`}
                     >
                       {isSubmitting ? "Verifying..." : "Confirm"}
                     </button>

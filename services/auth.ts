@@ -7,7 +7,7 @@ export async function register(
   lastName: string,
   phoneNumber: string
 ) {
-  const url = "users/register/";
+  const url = "/users/register/";
   return await send("POST", url, {
     email: email,
     password: password,

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import * as auth from "@/services/auth";
+import { toast } from 'react-toastify';
 
 const TIME_BEFORE_RESEND = 45; // seconds
 
@@ -19,6 +20,7 @@ export default function VerifyEmail() {
   const [email, setEmail] = useState<string | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const router = useRouter();
+  let hasSentInitialOTP = false;
 
   // get email from signup (client-only)
   useEffect(() => {
@@ -27,12 +29,17 @@ export default function VerifyEmail() {
         const stored = window.localStorage.getItem("last_registration_user");
         if (stored) {
           const parsed = JSON.parse(stored);
+          // console.log("last_registration_user bro", parsed);
           setEmail(parsed?.email ?? null);
         }
       }
     } catch (e) {
       console.warn("Failed to read last_registration_user from localStorage", e);
       setEmail(null);
+    }
+    if (!hasSentInitialOTP) {
+      handleResendCode();
+      hasSentInitialOTP = true;
     }
   }, []);
 
@@ -95,18 +102,35 @@ export default function VerifyEmail() {
 
         if (res.ok) {
           setIsSuccess(true);
+
+          const needs_phone_verification = data.need_phone_verification;
+          if (needs_phone_verification) {
+            console.log("User needs phone verification, proceeding to phone verification page");
+            toast.success('Your email has been verified. Please verify your phone number.');
+            setTimeout(
+              () => router.push("/verify-phone"),
+              3000
+            );
+          } else {
+            toast.success('Your email has been verified.');
+            setTimeout(
+              () => router.push("/login"),
+              3000
+            );
+          }
+
         } else {
           setIsError(true);
           setIsSubmitting(false);
           console.warn("Verification failed:", data);
           // alert("data from server:" + JSON.stringify(data));
-          const isAlreadyVerified = String(data?.error)
-            .toLowerCase()
-            .includes("already verified");
-          if (isAlreadyVerified) {
-            console.log("User already verified, proceeding to success state");
-            setIsSuccess(true);
-          }
+          // const isAlreadyVerified = String(data?.error)
+          //   .toLowerCase()
+          //   .includes("already verified");
+          // if (isAlreadyVerified) {
+          //   console.log("User already verified, proceeding to success state");
+          //   setIsSuccess(true);
+          // }
         }
       } catch (err) {
         console.error("Verification error:", err);
@@ -128,10 +152,57 @@ export default function VerifyEmail() {
     setCurrentInputIndex(0);
     inputRefs.current[0]?.focus();
 
+    const last_registration_user = window.localStorage.getItem("last_registration_user");
+    const parsed = last_registration_user ? JSON.parse(last_registration_user) : null;
+
+    const email_to_send = email || parsed?.email || "";
+
     try {
-      const res = await auth.sendEmailOTP(email || "");
-      if (!res.ok) {
-        console.error("Resend OTP failed");
+      const res = await auth.sendEmailOTP(email_to_send);
+      const data = await res.json();
+      if (res.ok) {
+        console.log("Resend email OTP success:", data);
+      } else {
+        console.error("Resend email OTP failed:", data);
+        if (data.error && data.error.includes("already verified")) {
+          console.error("Resend failed because email is already verified");
+
+          if (!last_registration_user) {
+            toast.success('Your email has already been verified.');
+            setTimeout(
+              () => router.push("/login"),
+              3000
+            );
+          }
+
+          // check if there is a need for phone verification
+          if (last_registration_user) {
+            parsed.is_email_verified = true;
+            window.localStorage.setItem("last_registration_user", JSON.stringify(parsed));
+
+            const is_phone_number_verified = parsed.is_phone_number_verified;
+            if (!is_phone_number_verified) {
+              console.log("User needs phone verification, proceeding to phone verification page");
+              toast.success('Your email has already been verified. Please verify your phone number.');
+              setTimeout(
+                () => router.push("/verify-phone"),
+                3000
+              );
+            } else {
+              toast.success('Your email has already been verified.');
+              setTimeout(
+                () => router.push("/login"),
+                3000
+              );
+            }
+          } else {
+            toast.success('Your email has already been verified.');
+            setTimeout(
+              () => router.push("/login"),
+              3000
+            );
+          }
+        }
       }
     } catch (err) {
       console.error("Resend OTP error:", err);
@@ -141,7 +212,7 @@ export default function VerifyEmail() {
   return (
     <div className="min-h-screen flex bg-gray-50">
       {/* Left Hero Section */}
-      <div className="hidden lg:flex lg:w-1/3 relative overflow-hidden">
+      < div className="hidden lg:flex lg:w-1/3 relative overflow-hidden" >
         <div className="absolute inset-0 bg-[url('/images/loginImage.png')] bg-cover bg-center">
           <div className="absolute inset-0 bg-gradient-to-b from-white via-white/30 to-[#012638]"></div>
         </div>
@@ -168,10 +239,10 @@ export default function VerifyEmail() {
             />
           </div>
         </div>
-      </div>
+      </div >
 
       {/* Right Section */}
-      <div className="w-full lg:w-2/3 flex flex-col bg-gray-50">
+      < div className="w-full lg:w-2/3 flex flex-col bg-gray-50" >
         <div className="flex justify-between lg:justify-end items-center p-4 lg:p-6 space-x-4 lg:space-x-8 bg-white shadow-sm">
           <div className="lg:hidden flex items-center">
             <div className="rounded-sm flex items-center justify-center">
@@ -245,13 +316,12 @@ export default function VerifyEmail() {
                             aria-label={`Email OTP digit ${index + 1}`}
                             inputMode="numeric"
                             autoComplete="one-time-code"
-                            className={`w-10 h-12 sm:w-14 sm:h-14 border-2 rounded-lg text-center text-lg sm:text-xl font-semibold text-gray-700 focus:outline-none transition-all ${
-                              isError
-                                ? "border-red-500 bg-red-50"
-                                : currentInputIndex === index
+                            className={`w-10 h-12 sm:w-14 sm:h-14 border-2 rounded-lg text-center text-lg sm:text-xl font-semibold text-gray-700 focus:outline-none transition-all ${isError
+                              ? "border-red-500 bg-red-50"
+                              : currentInputIndex === index
                                 ? "border-white bg-white shadow-lg ring-2 ring-teal-200"
                                 : "border-teal-200 bg-teal-50 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-                            }`}
+                              }`}
                             maxLength={1}
                           />
                         ))}
@@ -263,27 +333,29 @@ export default function VerifyEmail() {
                         </p>
                       )}
 
-                      <p className="text-center text-gray-600 mb-8">
-                        OTP expires in{" "}
-                        <span
-                          className={`font-semibold ${
-                            timeLeft <= 10 ? "text-red-500" : "text-teal-600"
-                          }`}
-                        >
-                          {timeLeft}
-                        </span>{" "}
-                        seconds
-                      </p>
+                      {
+                        timeLeft > 0 && (
+                          <p className="text-center text-gray-600 mb-8">
+                            OTP expires in{" "}
+                            <span
+                              className={`font-semibold ${timeLeft <= 10 ? "text-red-500" : "text-teal-600"
+                                }`}
+                            >
+                              {timeLeft}
+                            </span>{" "}
+                            seconds
+                          </p>
+                        )
+                      }
                     </div>
 
                     <button
                       type="submit"
                       disabled={!isOtpComplete || isExpired || isSubmitting}
-                      className={`w-full py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg shadow-lg ${
-                        isOtpComplete && !isExpired && !isSubmitting
-                          ? "bg-slate-800 hover:bg-slate-900 text-white cursor-pointer"
-                          : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      }`}
+                      className={`w-full py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg shadow-lg ${isOtpComplete && !isExpired && !isSubmitting
+                        ? "bg-slate-800 hover:bg-slate-900 text-white cursor-pointer"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        }`}
                     >
                       {isSubmitting ? "Verifying..." : "Confirm"}
                     </button>
@@ -354,7 +426,7 @@ export default function VerifyEmail() {
             © 2025 FintechApp. All rights reserved.
           </p>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
