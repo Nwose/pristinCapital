@@ -1,4 +1,3 @@
-// ("use client");
 "use client";
 
 console.log("✅ Summary page mounted!");
