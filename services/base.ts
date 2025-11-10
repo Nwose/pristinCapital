@@ -1,52 +1,88 @@
-export const domain = `https://pristin-asxu.onrender.com/api/v1/`;
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-const ALLOWED_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"];
-
-function strip(str: string, char: string = "/") {
-  if (str.startsWith(char)) {
-    str = str.slice(1);
-  }
-  if (str.endsWith(char)) {
-    str = str.slice(0, -1);
-  }
-
-  return str;
-}
+// ✅ Original function — keep this so other pages don’t break
 export async function send(
   method: string,
-  route: string,
-  data?: any,
-  token?: string,
-  removeTrailingSlash: boolean = false
+  endpoint: string,
+  body?: any,
+  token?: string
 ) {
-  if (!ALLOWED_METHODS.includes(method)) {
-    throw new Error("Invalid HTTP method");
-  }
-  const headers: Record<string, string> = {
+  const headers: HeadersInit = {
     "Content-Type": "application/json",
-    Accept: "application/json",
   };
 
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
 
-  let url = `${strip(domain)}/${strip(route)}/`;
+  // Clean URL (avoid double slashes)
+  const url = `${BASE_URL?.replace(/\/+$/, "")}/${endpoint.replace(
+    /^\/+/,
+    ""
+  )}`;
 
-  if (removeTrailingSlash) {
-    url = url.slice(0, -1);
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  // Handle 401 — token invalid or expired
+  if (res.status === 401) {
+    localStorage.removeItem("access_token");
+    window.location.href = "/admin/login";
+    throw new Error("Unauthorized. Please log in again.");
   }
 
-  try {
-    const response = await fetch(url, {
-      method: method,
-      headers: headers,
-      body: data ? JSON.stringify(data) : undefined,
-    });
+  // Try parsing JSON (even on failure)
+  const data = await res.json().catch(() => ({}));
 
-    return response;
-  } catch (error) {
-    console.error("Error making request:", error);
-    throw error;
+  if (!res.ok) {
+    const msg = data?.message || "Something went wrong";
+    throw new Error(msg);
   }
+
+  return data;
+}
+
+// ✅ New version — safer and typed (for loan products and debugging)
+export async function makeRequest<T = any>(
+  endpoint: string,
+  method: string = "GET",
+  body?: any,
+  headers: Record<string, string> = {}
+): Promise<T> {
+  const fullUrl = `${BASE_URL?.replace(/\/+$/, "")}/${endpoint.replace(
+    /^\/+/,
+    ""
+  )}`;
+
+  // 🔑 Attach token automatically if it exists
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+
+  const finalHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...headers,
+  };
+
+  if (token) {
+    finalHeaders.Authorization = `Bearer ${token}`;
+  }
+
+  console.log("🔗 Request URL:", fullUrl);
+
+  const res = await fetch(fullUrl, {
+    method,
+    headers: finalHeaders,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("❌ Request failed:", res.status, errorText);
+    throw new Error(`HTTP ${res.status}: ${errorText}`);
+  }
+
+  return res.json() as Promise<T>;
 }

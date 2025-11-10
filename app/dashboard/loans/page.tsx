@@ -1,182 +1,113 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import LoanDetailsModal from "./loan-details/LoanDetailsModal";
-import { useRouter } from "next/navigation";
-import loanService from "@/services/loan";
+import React, { useEffect, useState } from "react";
+import { getAllLoanProducts } from "@/services/loan_product.service";
+import { motion } from "framer-motion";
+import { toast } from "react-toastify";
+import Link from "next/link";
 
-interface LoanItem {
-  id: number;
-  title: string;
-  amount: string;
-  date: string;
-  status: string;
-  statusColor?: string;
-  iconBg?: string;
+interface LoanProduct {
+  id: string;
+  name: string;
+  description: string;
+  interest_rate: string;
+  min_amount: string;
+  max_amount: string;
+  max_tenure_months: number;
+  risk_level_display?: string;
 }
 
 export default function LoansPage() {
-  const [showModal, setShowModal] = useState(false);
-  const [loanHistory, setLoanHistory] = useState<LoanItem[]>([]);
+  const [products, setProducts] = useState<LoanProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  // 🧠 Map backend status to colors
-  const statusColorMap: Record<string, string> = {
-    approved: "text-[#10B981]",
-    pending: "text-[#F59E42]",
-    rejected: "text-[#F43F5E]",
-    failed: "text-[#F43F5E]",
-  };
 
   useEffect(() => {
-    const fetchLoans = async () => {
+    async function fetchProducts() {
       try {
-        const response = await loanService.getMyLoans();
-
-        // ✅ ensure response is an array before mapping
-        if (response && Array.isArray(response)) {
-          const formatted = response.map((loan: any) => ({
-            id: loan.id,
-            title: loan.purpose || "Loan Application",
-            amount: `₦${Number(loan.amount || 0).toLocaleString()}`,
-            date: new Date(loan.created_at).toLocaleString(),
-            status: loan.status || "pending",
-            statusColor:
-              statusColorMap[loan.status?.toLowerCase()] || "text-gray-400",
-            iconBg: "bg-[#1CC5AE]",
-          }));
-          setLoanHistory(formatted);
-        } else {
-          console.warn("Unexpected response for getMyLoans:", response);
-          setLoanHistory([]);
-        }
-      } catch (error) {
-        console.error("Error fetching loans:", error);
+        const res = await getAllLoanProducts();
+        setProducts(res);
+      } catch (error: any) {
+        toast.error("Failed to load loan products");
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchLoans();
+    }
+    fetchProducts();
   }, []);
 
+  if (loading)
+    return (
+      <div className="text-center text-gray-500 mt-10">
+        Loading available loan products...
+      </div>
+    );
+
+  if (products.length === 0)
+    return (
+      <div className="text-center text-gray-500 mt-10">
+        No loan products available at the moment.
+      </div>
+    );
+
   return (
-    <div className="flex flex-col md:flex-row gap-8 w-full relative">
-      {/* Left: Loan Summary and Actions */}
-      <div className="flex-1 max-w-xl">
-        <div className="bg-white rounded-2xl border border-[#CCEAE9] p-8 mb-6 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10 flex items-center justify-center pointer-events-none select-none">
-            <svg width="220" height="120" viewBox="0 0 220 120" fill="none">
-              <rect
-                x="30"
-                y="30"
-                width="160"
-                height="60"
-                rx="10"
-                fill="#CCEAE9"
-              />
-            </svg>
-          </div>
-          <div className="relative z-10">
-            <div className="text-gray-400 text-lg mb-2">
-              Current Loan Balance
-            </div>
-            <div className="text-3xl font-bold text-[#001B2E] mb-6">
-              ₦600,000.00
-            </div>
-            <div className="text-gray-400 text-lg mb-2">Loan Debt</div>
-            <div className="text-2xl font-bold text-[#001B2E] mb-6">
-              ₦50,000.00
-            </div>
-            <div className="text-gray-400 text-lg mb-2">Pending Loan</div>
-            <div className="text-2xl font-bold text-[#001B2E] mb-6">₦0.00</div>
-          </div>
-        </div>
+    <div className="flex flex-col gap-8 w-full px-4 md:px-0 py-8">
+      <h1 className="text-2xl font-bold text-[#001B2E] mb-4">
+        Available Loan Products
+      </h1>
 
-        <button
-          onClick={() => router.push("/dashboard/loans/request-loan")}
-          className="w-full bg-[#444] text-white py-3 rounded-lg font-semibold text-lg mb-2"
-        >
-          Request for Loan
-        </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {products.map((product, i) => (
+          <motion.div
+            key={product.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm hover:shadow-md transition-all"
+          >
+            <h2 className="text-xl font-semibold text-[#001B2E] mb-2">
+              {product.name}
+            </h2>
+            <p className="text-gray-500 text-sm mb-4">{product.description}</p>
+            <div className="space-y-1 text-sm text-gray-700">
+              <p>
+                <span className="font-semibold text-[#019893]">
+                  Interest Rate:
+                </span>{" "}
+                {Number(product.interest_rate) * 100}%
+              </p>
+              <p>
+                <span className="font-semibold text-[#019893]">
+                  Min Amount:
+                </span>{" "}
+                ₦{Number(product.min_amount).toLocaleString()}
+              </p>
+              <p>
+                <span className="font-semibold text-[#019893]">
+                  Max Amount:
+                </span>{" "}
+                ₦{Number(product.max_amount).toLocaleString()}
+              </p>
+              <p>
+                <span className="font-semibold text-[#019893]">Tenure:</span>{" "}
+                {product.max_tenure_months} months
+              </p>
+              {product.risk_level_display && (
+                <p>
+                  <span className="font-semibold text-[#019893]">Risk:</span>{" "}
+                  {product.risk_level_display}
+                </p>
+              )}
+            </div>
 
-        <div className="text-center text-gray-400 text-xs mb-4">
-          Please add your Business Details before you request for loan
-        </div>
-
-        <button
-          onClick={() => setShowModal(true)}
-          className="w-full bg-[#012638] text-white py-3 rounded-lg font-semibold text-lg"
-        >
-          Add your Business Details
-        </button>
+            {/* ✅ Fixed link path */}
+            <Link href={`/dashboard/loans/apply/${product.id}`}>
+              <button className="mt-6 w-full bg-[#019893] text-white py-2 rounded-lg font-semibold hover:bg-[#017e79] transition">
+                Apply Now
+              </button>
+            </Link>
+          </motion.div>
+        ))}
       </div>
-
-      {/* Right: Loan History */}
-      <div className="flex-1">
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-xl font-semibold text-[#001B2E]">
-            Loan History
-          </div>
-          <button className="text-[#019893] text-base font-medium hover:underline">
-            See All
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="text-center text-gray-500 mt-10">
-            Loading loans...
-          </div>
-        ) : loanHistory.length === 0 ? (
-          <div className="text-center text-gray-500 mt-10">
-            No loan applications found.
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {loanHistory.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between bg-white border border-[#CCEAE9] rounded-xl p-4"
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${item.iconBg}`}
-                  >
-                    <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10" fill="#fff" />
-                      <path
-                        d="M12 8v4l3 2"
-                        stroke="#019893"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="text-[#001B2E] font-medium text-base">
-                      {item.title}
-                    </div>
-                    <div className="text-[#019893] font-bold text-lg">
-                      {item.amount}
-                    </div>
-                    <div className="text-gray-400 text-xs">{item.date}</div>
-                  </div>
-                </div>
-                <div
-                  className={`font-semibold text-base capitalize ${item.statusColor}`}
-                >
-                  {item.status}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Modal */}
-      {showModal && <LoanDetailsModal onClose={() => setShowModal(false)} />}
     </div>
   );
 }

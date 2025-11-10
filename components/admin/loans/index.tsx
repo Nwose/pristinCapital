@@ -1,63 +1,49 @@
-import React from "react";
-import LoanDetailsHeader from "./LoanDetailsHeader";
-import RepaymentScheduleTable from "./RepaymentScheduleTable";
-import LoanDetailsActions from "./LoanDetailsAction";
-import DisbursementQueue from "./DisbursementQueue";
-import PenaltyManagement from "./PenaltyManagement";
+"use client";
 
-interface LoanDetailsProps {
-  loanId: string;
+import React from "react";
+
+interface LoanDetailsHeaderProps {
+  amount: string;
+  tenure: string;
+  interestRate: string;
+  creditScore: number;
 }
 
-const LoanDetails: React.FC<LoanDetailsProps> = ({ loanId }) => {
-  const repaymentSchedule = [
-    { dueDate: "2024-08-15", amount: "₦450", penalty: "₦25" },
-    { dueDate: "2024-09-15", amount: "₦450", penalty: "₦0" },
-    { dueDate: "2024-10-15", amount: "₦450", penalty: "₦0" },
-    { dueDate: "2024-11-15", amount: "₦450", penalty: "₦0" },
-    { dueDate: "2024-12-15", amount: "₦450", penalty: "₦0" },
-  ];
-
-  const disbursementQueue = [
-    { user: "Ethan Bennett", amount: "₦10,000", approvedDate: "2024-07-16" },
-    { user: "Ava Foster", amount: "₦12,000", approvedDate: "2024-07-02" },
-    { user: "Liam Harper", amount: "₦7,500", approvedDate: "2024-07-06" },
-  ];
-
-  const penalties: {
-    user: string;
-    loanId: string;
-    penaltyAmount: string;
-    status: "Late" | "On Time";
-  }[] = [
-    {
-      user: "Ethan Bennett",
-      loanId: "LN-2024-002",
-      penaltyAmount: "₦50",
-      status: "Late",
-    },
-    {
-      user: "Ava Foster",
-      loanId: "LN-2024-005",
-      penaltyAmount: "₦25",
-      status: "On Time",
-    },
-  ];
-
+const LoanDetailsHeader: React.FC<LoanDetailsHeaderProps> = ({
+  amount,
+  tenure,
+  interestRate,
+  creditScore,
+}) => {
   return (
-    <>
-      <LoanDetailsHeader
-        amount="₦10,000"
-        tenure="24 months"
-        interestRate="8.5%"
-        creditScore={720}
-      />
-      <RepaymentScheduleTable schedule={repaymentSchedule} />
-      <LoanDetailsActions />
-      <DisbursementQueue queue={disbursementQueue} />
-      <PenaltyManagement penalties={penalties} />
-    </>
+    <div className="bg-white shadow-sm rounded-lg p-6 mb-6">
+      <h2 className="text-xl font-semibold mb-4 text-gray-800">
+        Loan Details Summary
+      </h2>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-gray-50 p-4 rounded-lg border">
+          <p className="text-sm text-gray-500">Loan Amount</p>
+          <p className="text-lg font-semibold text-gray-800">{amount}</p>
+        </div>
+
+        <div className="bg-gray-50 p-4 rounded-lg border">
+          <p className="text-sm text-gray-500">Tenure</p>
+          <p className="text-lg font-semibold text-gray-800">{tenure}</p>
+        </div>
+
+        <div className="bg-gray-50 p-4 rounded-lg border">
+          <p className="text-sm text-gray-500">Interest Rate</p>
+          <p className="text-lg font-semibold text-gray-800">{interestRate}</p>
+        </div>
+
+        <div className="bg-gray-50 p-4 rounded-lg border">
+          <p className="text-sm text-gray-500">Credit Score</p>
+          <p className="text-lg font-semibold text-gray-800">{creditScore}</p>
+        </div>
+      </div>
+    </div>
   );
 };
 
-export default LoanDetails;
+export default LoanDetailsHeader;

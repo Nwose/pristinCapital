@@ -11,10 +11,33 @@ interface Penalty {
 
 interface PenaltyManagementProps {
   penalties: Penalty[];
+  loanId: string;
+  token: string;
 }
 
-const PenaltyManagement: React.FC<PenaltyManagementProps> = ({ penalties }) => {
+const PenaltyManagement: React.FC<PenaltyManagementProps> = ({
+  penalties,
+  loanId,
+  token,
+}) => {
   const [autoPenalty, setAutoPenalty] = useState(false);
+
+  const handleToggleAutoPenalty = async () => {
+    try {
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/loan/toggle_auto_penalty/${loanId}/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setAutoPenalty(!autoPenalty);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <section className="mt-10">
@@ -72,7 +95,7 @@ const PenaltyManagement: React.FC<PenaltyManagementProps> = ({ penalties }) => {
             type="checkbox"
             className="sr-only"
             checked={autoPenalty}
-            onChange={() => setAutoPenalty(!autoPenalty)}
+            onChange={handleToggleAutoPenalty}
           />
           <div
             className={`w-11 h-6 rounded-full transition ${

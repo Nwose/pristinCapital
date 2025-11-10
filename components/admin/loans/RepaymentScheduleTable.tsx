@@ -11,7 +11,7 @@ interface RepaymentScheduleTableProps {
 }
 
 const RepaymentScheduleTable: React.FC<RepaymentScheduleTableProps> = ({
-  schedule,
+  schedule = [],
 }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
@@ -24,18 +24,26 @@ const RepaymentScheduleTable: React.FC<RepaymentScheduleTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {schedule.map((item, i) => (
-            <tr
-              key={i}
-              className={`text-sm text-gray-800 ${
-                i !== schedule.length - 1 ? "border-b border-gray-100" : ""
-              } hover:bg-gray-50 transition`}
-            >
-              <td className="py-3 px-6">{item.dueDate}</td>
-              <td className="py-3 px-6">{item.amount}</td>
-              <td className="py-3 px-6">{item.penalty}</td>
+          {schedule.length > 0 ? (
+            schedule.map((item, i) => (
+              <tr
+                key={i}
+                className={`text-sm text-gray-800 ${
+                  i !== schedule.length - 1 ? "border-b border-gray-100" : ""
+                } hover:bg-gray-50 transition`}
+              >
+                <td className="py-3 px-6">{item.dueDate}</td>
+                <td className="py-3 px-6">{item.amount}</td>
+                <td className="py-3 px-6">{item.penalty}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={3} className="py-4 px-6 text-gray-500 text-center">
+                No repayment data available
+              </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

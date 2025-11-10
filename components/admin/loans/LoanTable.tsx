@@ -1,71 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import Link from "next/link";
+import {
+  getLoanApplications,
+  LoanApplication,
+} from "@/services/loan_application.service";
 
 type LoanStatus = "Pending" | "Approved" | "Rejected";
 
-interface Loan {
-  id: number;
-  user: string;
-  amount: string;
-  tenure: string;
-  purpose: string;
-  status: LoanStatus;
-  appliedDate: string;
-}
-
-const loans: Loan[] = [
-  {
-    id: 1,
-    user: "Sophia Clark",
-    amount: "₦5,000",
-    tenure: "12 months",
-    purpose: "Home Improvement",
-    status: "Pending",
-    appliedDate: "2024-07-20",
-  },
-  {
-    id: 2,
-    user: "Ethan Bennett",
-    amount: "₦10,000",
-    tenure: "24 months",
-    purpose: "Debt Consolidation",
-    status: "Approved",
-    appliedDate: "2024-07-15",
-  },
-  {
-    id: 3,
-    user: "Olivia Carter",
-    amount: "₦2,500",
-    tenure: "6 months",
-    purpose: "Personal Expenses",
-    status: "Rejected",
-    appliedDate: "2024-07-10",
-  },
-  {
-    id: 4,
-    user: "Liam Harper",
-    amount: "₦7,500",
-    tenure: "18 months",
-    purpose: "Business Startup",
-    status: "Pending",
-    appliedDate: "2024-07-05",
-  },
-  {
-    id: 5,
-    user: "Ava Foster",
-    amount: "₦12,000",
-    tenure: "36 months",
-    purpose: "Vehicle Purchase",
-    status: "Approved",
-    appliedDate: "2024-07-01",
-  },
-];
-
 export default function LoanTable() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [loans, setLoans] = useState<LoanApplication[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const toggleDropdown = (key: string) => {
     setOpenDropdown(openDropdown === key ? null : key);
@@ -83,6 +31,23 @@ export default function LoanTable() {
         return "";
     }
   };
+
+  // ✅ Fetch loan applications
+  useEffect(() => {
+    const fetchLoans = async () => {
+      try {
+        setLoading(true);
+        const data = await getLoanApplications();
+        setLoans(data);
+      } catch (error) {
+        console.error("Failed to fetch loan applications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLoans();
+  }, []);
 
   return (
     <section>
@@ -137,55 +102,74 @@ export default function LoanTable() {
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="bg-gray-50 text-gray-700 text-sm">
-              <th className="py-3 px-6 font-medium">User</th>
-              <th className="py-3 px-6 font-medium">Amount</th>
-              <th className="py-3 px-6 font-medium">Tenure</th>
-              <th className="py-3 px-6 font-medium">Purpose</th>
-              <th className="py-3 px-6 font-medium">Status</th>
-              <th className="py-3 px-6 font-medium">Applied Date</th>
-              <th className="py-3 px-6 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loans.map((loan, i) => (
-              <tr
-                key={loan.id}
-                className={`text-gray-800 text-sm ${
-                  i !== loans.length - 1 ? "border-b border-gray-100" : ""
-                } hover:bg-gray-50 transition`}
-              >
-                <td className="py-4 px-6">{loan.user}</td>
-                <td className="py-4 px-6">{loan.amount}</td>
-                <td className="py-4 px-6">{loan.tenure}</td>
-                <td className="py-4 px-6">{loan.purpose}</td>
-                <td className="py-4 px-6">
-                  <span
-                    className={`px-3 py-1 text-xs font-semibold rounded-md ${statusColor(
-                      loan.status
-                    )}`}
-                  >
-                    {loan.status}
-                  </span>
-                </td>
-                <td className="py-4 px-6">{loan.appliedDate}</td>
-                <td className="py-4 px-6 text-right">
-                  <Link
-                    href={`/admin/loans/${loan.id}`}
-                    className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                  >
-                    View Details
-                  </Link>
-                </td>
+        {loading ? (
+          <div className="p-6 text-center text-gray-600">Loading loans...</div>
+        ) : loans.length === 0 ? (
+          <div className="p-6 text-center text-gray-600">
+            No loan applications found.
+          </div>
+        ) : (
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-gray-50 text-gray-700 text-sm">
+                <th className="py-3 px-6 font-medium">User</th>
+                <th className="py-3 px-6 font-medium">Amount</th>
+                <th className="py-3 px-6 font-medium">Tenure</th>
+                <th className="py-3 px-6 font-medium">Purpose</th>
+                <th className="py-3 px-6 font-medium">Status</th>
+                <th className="py-3 px-6 font-medium">Applied Date</th>
+                <th className="py-3 px-6 text-right font-medium">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loans.map((loan, i) => (
+                <tr
+                  key={loan.id}
+                  className={`text-gray-800 text-sm ${
+                    i !== loans.length - 1 ? "border-b border-gray-100" : ""
+                  } hover:bg-gray-50 transition`}
+                >
+                  <td className="py-4 px-6">
+                    {loan.user
+                      ? `${loan.user.first_name || ""} ${
+                          loan.user.last_name || ""
+                        }`
+                      : "N/A"}
+                  </td>
+                  <td className="py-4 px-6">₦{loan.amount}</td>
+                  <td className="py-4 px-6">{loan.tenure} months</td>
+                  <td className="py-4 px-6">{loan.purpose}</td>
+                  <td className="py-4 px-6">
+                    <span
+                      className={`px-3 py-1 text-xs font-semibold rounded-md ${statusColor(
+                        loan.status
+                      )}`}
+                    >
+                      {loan.status}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6">
+                    {loan.created_at
+                      ? new Date(loan.created_at).toLocaleDateString()
+                      : "—"}
+                  </td>
+                  <td className="py-4 px-6 text-right">
+                    {/* ✅ View Details Link Updated */}
+                    <Link
+                      href={`/admin/loans/${loan.id}`}
+                      className="text-blue-600 hover:text-blue-800 font-medium text-sm underline-offset-2 hover:underline"
+                    >
+                      View Details
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {/* Fade animation for dropdowns */}
+      {/* Fade animation */}
       <style jsx>{`
         @keyframes fade-in {
           from {

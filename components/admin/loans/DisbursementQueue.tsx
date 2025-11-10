@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface QueueItem {
   user: string;
@@ -7,10 +7,40 @@ interface QueueItem {
 }
 
 interface DisbursementQueueProps {
+  loanId: string;
   queue: QueueItem[];
+  token: string;
+  refreshData: () => Promise<void>;
 }
 
-const DisbursementQueue: React.FC<DisbursementQueueProps> = ({ queue }) => {
+const DisbursementQueue: React.FC<DisbursementQueueProps> = ({
+  loanId,
+  queue,
+  token,
+  refreshData,
+}) => {
+  const [otp, setOtp] = useState("");
+
+  const handleDisburseSelected = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/loan/disburse/${loanId}/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ otp }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to disburse");
+      await refreshData();
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
+
   return (
     <section className="mt-8">
       <h2 className="text-lg font-semibold text-gray-900 mb-3">
@@ -43,10 +73,6 @@ const DisbursementQueue: React.FC<DisbursementQueueProps> = ({ queue }) => {
         </table>
       </div>
 
-      <button className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-5 py-2.5 rounded-md transition mb-4">
-        Disburse Selected
-      </button>
-
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           OTP
@@ -54,9 +80,18 @@ const DisbursementQueue: React.FC<DisbursementQueueProps> = ({ queue }) => {
         <input
           type="text"
           placeholder="Enter OTP"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
           className="w-full max-w-sm px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
       </div>
+
+      <button
+        onClick={handleDisburseSelected}
+        className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-5 py-2.5 rounded-md transition mt-3"
+      >
+        Disburse Selected
+      </button>
     </section>
   );
 };

@@ -1,17 +1,17 @@
 import React from "react";
 
 interface LoanDetailsHeaderProps {
-  amount: string;
-  tenure: string;
-  interestRate: string;
-  creditScore: number;
+  amount?: string;
+  tenure?: string;
+  interestRate?: string;
+  creditScore?: number;
 }
 
 const LoanDetailsHeader: React.FC<LoanDetailsHeaderProps> = ({
-  amount,
-  tenure,
-  interestRate,
-  creditScore,
+  amount = "₦0",
+  tenure = "N/A",
+  interestRate = "0%",
+  creditScore = 0,
 }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
