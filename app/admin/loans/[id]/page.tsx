@@ -82,17 +82,6 @@ export default function LoanDetailsPage() {
     }
   };
 
-  // ✅ Disburse Loan
-  const handleDisburse = async () => {
-    try {
-      await makeRequest(`loan/${loan.id}/`, "POST");
-      toast.success("💸 Loan disbursed successfully!");
-      await fetchLoan();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to disburse loan");
-    }
-  };
-
   // ✅ Add Penalty
   const handleAddPenalty = async () => {
     setPenaltyLoading(true);
@@ -248,6 +237,40 @@ export default function LoanDetailsPage() {
                 </p>
               </div>
             </div>
+
+            {/* 📜 Penalty List */}
+            {loan.penalties?.length > 0 && (
+              <div className="mt-6">
+                <h4 className="text-md font-semibold text-gray-800 mb-2">
+                  Penalties
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border border-gray-200 text-sm text-gray-700 bg-white rounded-lg">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="px-4 py-2 text-left">Amount</th>
+                        <th className="px-4 py-2 text-left">Reason</th>
+                        <th className="px-4 py-2 text-left">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loan.penalties.map((p: any, i: number) => (
+                        <tr
+                          key={i}
+                          className="border-b last:border-0 hover:bg-gray-50"
+                        >
+                          <td className="px-4 py-2">₦{p.amount}</td>
+                          <td className="px-4 py-2">{p.reason}</td>
+                          <td className="px-4 py-2">
+                            {new Date(p.created_at).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -264,10 +287,7 @@ export default function LoanDetailsPage() {
             >
               Reject
             </button>
-            <button
-              onClick={handleDisburse}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-            >
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
               Disburse
             </button>
             <button
@@ -280,9 +300,8 @@ export default function LoanDetailsPage() {
         </div>
       </div>
 
-      {/* ✅ Penalty Modal */}
       {showPenaltyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative">
             <button
               onClick={() => setShowPenaltyModal(false)}

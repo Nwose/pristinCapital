@@ -139,7 +139,7 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center px-4 py-8">
       <ToastContainer position="top-center" autoClose={2500} hideProgressBar />
-      <div className="bg-teal-200/50 backdrop-blur-sm rounded-3xl p-8 w-full max-w-md shadow-2xl">
+      <div className="bg-white backdrop-blur-sm rounded-3xl p-8 w-full max-w-md shadow-2xl">
         {/* Logo */}
         <div className="text-center mb-8">
           <Image
@@ -174,7 +174,7 @@ export default function AdminLogin() {
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="admin@example.com"
-                  className="w-full px-4 py-3 bg-teal-300/50 border-none rounded-lg placeholder-slate-600 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-800"
+                  className="w-full px-4 py-3 bg-gray-100 border-none rounded-lg placeholder-slate-600 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-800"
                   required
                 />
               </div>
@@ -193,7 +193,7 @@ export default function AdminLogin() {
                   value={formData.password}
                   onChange={handleInputChange}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 bg-teal-300/50 border-none rounded-lg placeholder-slate-600 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-800"
+                  className="w-full px-4 py-3 bg-gray-100 border-none rounded-lg placeholder-slate-600 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-800"
                   required
                 />
               </div>
@@ -213,7 +213,7 @@ export default function AdminLogin() {
                 value={formData.otp}
                 onChange={handleInputChange}
                 placeholder="Enter your 6-digit code"
-                className="w-full px-4 py-3 bg-teal-300/50 border-none rounded-lg placeholder-slate-600 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-800"
+                className="w-full px-4 py-3 bg-gray-100 border-none rounded-lg placeholder-slate-600 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-800"
                 required
               />
             </div>
