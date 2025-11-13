@@ -129,7 +129,9 @@ export default function LoanProductsTable({
     return <p className="text-center text-gray-500">No loan products found.</p>;
 
   return (
-    <>
+    <div className="max-w-6xl mx-auto mt-12 px-6">
+      {" "}
+      {/* ✅ Centered & spaced down */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-800">Loan Products</h2>
         <button
@@ -139,7 +141,6 @@ export default function LoanProductsTable({
           + New Loan Product
         </button>
       </div>
-
       <div className="overflow-x-auto rounded-xl shadow-md border border-gray-200">
         <table className="min-w-full text-sm text-left text-gray-700">
           <thead className="bg-gray-100 text-xs uppercase">
@@ -181,8 +182,7 @@ export default function LoanProductsTable({
           </tbody>
         </table>
       </div>
-
-      {/* ✅ Create Modal (unchanged UI) */}
+      {/* ✅ Create Modal */}
       {creating && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 px-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
@@ -266,7 +266,6 @@ export default function LoanProductsTable({
           </div>
         </div>
       )}
-
       {/* ✅ Delete Confirmation Modal */}
       {deletingProduct && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 px-4">
@@ -293,6 +292,6 @@ export default function LoanProductsTable({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

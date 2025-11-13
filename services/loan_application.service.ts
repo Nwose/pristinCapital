@@ -7,28 +7,27 @@ export interface LoanApplication {
     first_name?: string;
     last_name?: string;
   };
-  amount: string | number;
-  tenure: string | number;
+  amount: number;
+  tenure: number;
   purpose: string;
-  status: "Pending" | "Approved" | "Rejected";
+  status: "Pending" | "Approved" | "Rejected" | string;
   created_at?: string;
 }
 
 // ✅ Get all loan applications
 export async function getLoanApplications(): Promise<LoanApplication[]> {
   try {
-    const data = await makeRequest("loan-application/", "GET");
+    const data = await makeRequest("api/v1/loan-application/", "GET");
     const list = Array.isArray(data) ? data : data.results || [];
 
-    // normalize keys to match your UI
     return list.map((item: any) => ({
       id: item.id,
       user: item.user,
-      amount: item.amount_requested, // match table
-      tenure: item.tenure_months, // match table
-      purpose: item.purpose,
-      status: item.status,
-      appliedDate: item.created_at,
+      amount: item.amount_requested ?? item.amount ?? 0,
+      tenure: item.tenure_months ?? item.tenure ?? 0,
+      purpose: item.purpose ?? "N/A",
+      status: item.status ?? "Pending",
+      created_at: item.created_at ?? "",
     }));
   } catch (error) {
     console.error("❌ Error fetching loan applications:", error);
@@ -41,21 +40,38 @@ export async function getLoanApplicationById(
   id: string
 ): Promise<LoanApplication> {
   try {
-    const data = await makeRequest(`loan-application/${id}/`, "GET");
-    return data;
+    return await makeRequest(`api/v1/loan-application/${id}/`, "GET");
   } catch (error) {
-    console.error(`❌ Error fetching loan application with ID ${id}:`, error);
+    console.error(`❌ Error fetching loan application ${id}:`, error);
     throw error;
   }
 }
 
-// ✅ Apply for a loan (corrected fields)
-
+// ✅ Apply for a new loan
 export async function applyForLoan(payload: {
-  product_id: string; // ✅ backend expects this key
-  amount_requested: number; // ✅ backend expects this key
-  tenure_months: number; // ✅ backend expects this key
+  product_id: string;
+  amount_requested: number;
+  tenure_months: number;
   purpose: string;
 }) {
-  return makeRequest("loan-application/", "POST", payload);
+  return makeRequest("api/v1/loan-application/", "POST", payload);
+}
+
+// ✅ Get user loan history
+export async function getUserLoans() {
+  try {
+    const data = await makeRequest("api/v1/loan/", "GET");
+    const list = Array.isArray(data) ? data : data.results || [];
+
+    return list.map((item: any) => ({
+      id: item.id,
+      amount: item.amount ?? 0,
+      purpose: item.purpose ?? "N/A",
+      status: item.status ?? "Pending",
+      created_at: item.created_at ?? "",
+    }));
+  } catch (error) {
+    console.error("❌ Error fetching user loans:", error);
+    throw error;
+  }
 }

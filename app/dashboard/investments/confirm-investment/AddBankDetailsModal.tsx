@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
-import { ArrowLeft, CreditCard } from "lucide-react";
-import { Building2 } from "lucide-react";
+
+import { useState, useEffect } from "react";
+import { ArrowLeft, Building2 } from "lucide-react";
+import { makeRequest } from "@/services/base";
 
 interface AddBankDetailsModalProps {
   isOpen: boolean;
@@ -19,14 +20,82 @@ export default function AddBankDetailsModal({
     branch: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+
+  // ✅ Fetch banks using makeRequest
+  useEffect(() => {
+    if (isOpen) {
+      const fetchBanks = async () => {
+        try {
+          const data = await makeRequest(
+            "/api/v1/bank_account/get_banks/",
+            "GET"
+          );
+          setBanks(data || []);
+        } catch (error) {
+          console.error("❌ Failed to load banks:", error);
+        }
+      };
+      fetchBanks();
+    }
+  }, [isOpen]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // ✅ Verify NUBAN account
+  const verifyAccount = async () => {
+    if (!formData.accountNumber || !formData.bankName) return;
+    setVerifying(true);
+    try {
+      const data = await makeRequest(
+        "/api/v1/bank_account/resolve_nuban/",
+        "POST",
+        {
+          account_number: formData.accountNumber,
+          bank_code: formData.bankName,
+        }
+      );
+      setFormData((prev) => ({
+        ...prev,
+        accountHolderName: data.account_name || prev.accountHolderName,
+      }));
+      console.log("✅ Account verified:", data);
+    } catch (error) {
+      console.error("❌ Failed to verify account:", error);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  // ✅ Submit and add bank details
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitted:", formData);
-    onClose();
+    setLoading(true);
+    try {
+      const payload = {
+        account_name: formData.accountHolderName,
+        account_number: formData.accountNumber,
+        bank_name: formData.bankName,
+        branch: formData.branch,
+      };
+      const data = await makeRequest(
+        "/api/v1/bank_account/add_bank_account/",
+        "POST",
+        payload
+      );
+      console.log("✅ Bank added successfully:", data);
+      onClose();
+    } catch (error) {
+      console.error("❌ Failed to add bank:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -44,7 +113,6 @@ export default function AddBankDetailsModal({
 
         {/* Header */}
         <div className="text-center mb-6 mt-2">
-          {/* <CreditCard className="mx-auto text-blue-600 mb-2" size={28} /> */}
           <Building2 className="mx-auto text-blue-600 mb-2" size={28} />
           <h2 className="text-lg font-semibold text-gray-800">
             Add Bank Details
@@ -80,25 +148,34 @@ export default function AddBankDetailsModal({
               name="accountNumber"
               value={formData.accountNumber}
               onChange={handleChange}
+              onBlur={verifyAccount}
               placeholder="Enter account number"
               className="w-full border border-gray-300 rounded-md px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               required
             />
+            {verifying && (
+              <p className="text-xs text-blue-600 mt-1">Verifying account...</p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Bank Name
             </label>
-            <input
-              type="text"
+            <select
               name="bankName"
               value={formData.bankName}
               onChange={handleChange}
-              placeholder="Enter bank name"
               className="w-full border border-gray-300 rounded-md px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               required
-            />
+            >
+              <option value="">Select Bank</option>
+              {banks.map((bank, index) => (
+                <option key={index} value={bank.code}>
+                  {bank.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -117,9 +194,10 @@ export default function AddBankDetailsModal({
 
           <button
             type="submit"
-            className="w-full bg-[#0A2533] text-white py-2 rounded-md hover:bg-[#133a50] transition-all"
+            disabled={loading}
+            className="w-full bg-[#0A2533] text-white py-2 rounded-md hover:bg-[#133a50] transition-all disabled:opacity-50"
           >
-            + Add Bank Details
+            {loading ? "Adding..." : "+ Add Bank Details"}
           </button>
         </form>
       </div>

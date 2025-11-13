@@ -5,6 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {
+  loginFirstFactor,
+  loginSecondFactor,
+  send2FA_OTP,
+} from "@/services/auth";
 
 export default function AdminLogin() {
   const [formData, setFormData] = useState({
@@ -16,13 +21,6 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [tfaToken, setTfaToken] = useState<string | null>(null);
-
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    "https://pristin-asxu.onrender.com/api/v1";
-
-  const makeUrl = (endpoint: string) =>
-    `${baseUrl.replace(/\/$/, "")}/${endpoint.replace(/^\//, "")}`;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -38,37 +36,22 @@ export default function AdminLogin() {
 
     try {
       if (!showOtp) {
-        // 🔹 Step 1: Login with email + password
-        const res = await fetch(makeUrl("login/token/1stfactor/"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-          }),
-        });
+        // Step 1: First factor login
+        const data = await loginFirstFactor(formData.email, formData.password);
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.detail || "Invalid credentials");
-
-        // ✅ If tfa_token is returned, trigger sending the OTP
+        // If 2FA required
         if (data.tfa_token) {
           setTfaToken(data.tfa_token);
           localStorage.setItem("tfa_token", data.tfa_token);
 
-          // 🔹 Call the send_2fa_otp endpoint
-          await fetch(makeUrl("users/send_2fa_otp/"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tfa_token: data.tfa_token }),
-          });
-
-          toast.info("2FA code sent! Please check your email.");
+          // Send OTP
+          await send2FA_OTP(data.tfa_token);
+          toast.info("2FA code sent! Check your email.");
           setShowOtp(true);
           return;
         }
 
-        // ✅ If access_token is returned, login complete
+        // If login successful without 2FA
         if (data.access_token || data.access) {
           localStorage.setItem(
             "access_token",
@@ -76,61 +59,28 @@ export default function AdminLogin() {
           );
           localStorage.setItem("refresh_token", data.refresh_token || "");
           toast.success("Login successful!");
-          setTimeout(() => {
-            window.location.href = "/admin/dashboard";
-          }, 1200);
+          setTimeout(() => (window.location.href = "/admin/dashboard"), 1200);
           return;
         }
 
-        throw new Error("Unexpected response from server.");
+        throw new Error("Unexpected server response");
       }
 
-      // 🔹 Step 2: Verify 2FA OTP
+      // Step 2: Second factor (2FA) login
       if (showOtp && tfaToken) {
-        console.log("🔹 Sending 2FA verification request...");
-
-        try {
-          const res = await fetch(makeUrl("login/token/2stfactor/"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              tfa_token: tfaToken,
-              otp: formData.otp,
-            }),
-          });
-
-          console.log("2FA response object:", res);
-
-          // Try reading the response body
-          const data = await res.json().catch(() => null);
-          console.log("2FA response data:", data);
-
-          // ✅ Added Debug Check (this is the only new logic)
-          if (!data?.access_token && !data?.access) {
-            console.warn("⚠️ Full backend response:", data);
-            throw new Error("No access token returned by server");
-          }
-
-          const accessToken = data?.access_token || data?.access;
-          const refreshToken = data?.refresh_token || "";
-
-          localStorage.setItem("access_token", accessToken);
-          localStorage.setItem("refresh_token", refreshToken);
-
-          toast.success("Login successful!");
-          setTimeout(() => {
-            window.location.href = "/admin/dashboard";
-          }, 1000);
-        } catch (error: any) {
-          console.error("❌ 2FA request failed:", error);
-          toast.error(error.message || "Error verifying 2FA");
+        const data = await loginSecondFactor(tfaToken, formData.otp);
+        if (!data.access_token && !data.access) {
+          throw new Error("Invalid 2FA code");
         }
 
-        return;
+        localStorage.setItem("access_token", data.access_token || data.access);
+        localStorage.setItem("refresh_token", data.refresh_token || "");
+        toast.success("Login successful!");
+        setTimeout(() => (window.location.href = "/admin/dashboard"), 1000);
       }
     } catch (err: any) {
-      console.error("❌ Login error:", err);
-      toast.error(err.message || "Something went wrong");
+      toast.error(err.message || "Login failed");
+      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }

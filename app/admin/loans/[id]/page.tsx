@@ -38,6 +38,31 @@ export default function LoanDetailsPage() {
     fetchLoan();
   }, [id]);
 
+  // ✅ Custom error handler to extract readable messages
+  const handleError = (err: any, fallbackMsg: string) => {
+    let message = fallbackMsg;
+
+    try {
+      if (err.message?.startsWith("HTTP")) {
+        const jsonPart = err.message.replace(/^HTTP \d+: /, "");
+        const parsed = JSON.parse(jsonPart);
+
+        if (parsed.detail) {
+          message = parsed.detail;
+        } else {
+          // If error object has field-level errors
+          message = Object.entries(parsed)
+            .map(([key, val]) => `${key}: ${(val as string[]).join(", ")}`)
+            .join("\n");
+        }
+      }
+    } catch {
+      // do nothing, keep fallback message
+    }
+
+    toast.error(message);
+  };
+
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-500">
@@ -67,7 +92,7 @@ export default function LoanDetailsPage() {
       toast.success("✅ Loan approved successfully!");
       await fetchLoan();
     } catch (err: any) {
-      toast.error(err.message || "Failed to approve loan");
+      handleError(err, "Failed to approve loan");
     }
   };
 
@@ -78,7 +103,7 @@ export default function LoanDetailsPage() {
       toast.success("🚫 Loan rejected successfully!");
       await fetchLoan();
     } catch (err: any) {
-      toast.error(err.message || "Failed to reject loan");
+      handleError(err, "Failed to reject loan");
     }
   };
 
@@ -96,7 +121,7 @@ export default function LoanDetailsPage() {
       setPenaltyReason("");
       await fetchLoan();
     } catch (err: any) {
-      toast.error(err.message || "Failed to add penalty");
+      handleError(err, "Failed to add penalty");
     } finally {
       setPenaltyLoading(false);
     }
@@ -185,7 +210,7 @@ export default function LoanDetailsPage() {
             <div>
               <p className="text-gray-500 text-sm">Status</p>
               <span
-                className={`px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                className={`px-2 rounded-full text-sm font-medium ${getStatusColor(
                   loan.status
                 )}`}
               >

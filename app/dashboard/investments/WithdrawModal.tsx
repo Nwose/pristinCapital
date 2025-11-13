@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X, Wallet } from "lucide-react";
+import { makeRequest } from "@/services/base";
 
 interface WithdrawalModalProps {
   isOpen: boolean;
@@ -13,11 +14,11 @@ export default function WithdrawalModal({
   onClose,
 }: WithdrawalModalProps) {
   const [amount, setAmount] = useState("");
-  const [selectedInvestment, setSelectedInvestment] = useState(
-    "Growth Bond Alpha (Eligible)"
-  );
+  const [selectedBank, setSelectedBank] = useState("");
+  const [banks, setBanks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // close on Escape
+  // Close modal on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -25,6 +26,52 @@ export default function WithdrawalModal({
     if (isOpen) window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [isOpen, onClose]);
+
+  // Fetch user banks when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchUserBanks();
+    }
+  }, [isOpen]);
+
+  const fetchUserBanks = async () => {
+    try {
+      const res = await makeRequest("/api/v1/bank_account/my_banks/", "GET");
+      if (res && res.length > 0) {
+        setBanks(res);
+        setSelectedBank(res[0].account_number); // default select
+      }
+    } catch (error) {
+      console.error("Failed to fetch banks", error);
+    }
+  };
+
+  const handleWithdraw = async (type: "partial" | "full") => {
+    if (!amount && type === "partial") return alert("Please enter an amount");
+
+    setLoading(true);
+    try {
+      const payload =
+        type === "full"
+          ? { bank_account: selectedBank, type: "full" }
+          : { bank_account: selectedBank, amount, type: "partial" };
+
+      // Example endpoint — replace with real withdrawal endpoint once confirmed
+      const res = await makeRequest("/api/v1/wallets/fund/", "POST", payload);
+
+      console.log(
+        `${type === "full" ? "Full" : "Partial"} withdrawal response:`,
+        res
+      );
+      alert("Withdrawal request submitted successfully!");
+      onClose();
+    } catch (error) {
+      console.error("Withdrawal error", error);
+      alert("Failed to submit withdrawal request.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -34,15 +81,15 @@ export default function WithdrawalModal({
       aria-modal="true"
       role="dialog"
     >
-      {/* Backdrop (click to close) */}
+      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* Modal */}
       <div
         className="relative bg-white w-[92%] max-w-md rounded-xl shadow-lg p-6 z-10"
-        onClick={(e) => e.stopPropagation()} // prevent backdrop click when interacting inside modal
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
+        {/* Close */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
@@ -61,19 +108,25 @@ export default function WithdrawalModal({
 
         {/* Form */}
         <div className="space-y-4">
-          {/* Select Investment */}
+          {/* Select Bank */}
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">
-              Select Investment
+              Select Bank Account
             </label>
             <select
-              value={selectedInvestment}
-              onChange={(e) => setSelectedInvestment(e.target.value)}
+              value={selectedBank}
+              onChange={(e) => setSelectedBank(e.target.value)}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring focus:ring-blue-100"
             >
-              <option>Growth Bond Alpha (Eligible)</option>
-              <option>Secure Fund Beta</option>
-              <option>Dynamic Yield Gamma</option>
+              {banks.length > 0 ? (
+                banks.map((bank) => (
+                  <option key={bank.id} value={bank.account_number}>
+                    {bank.bank_name} - {bank.account_number}
+                  </option>
+                ))
+              ) : (
+                <option disabled>No bank accounts found</option>
+              )}
             </select>
           </div>
 
@@ -89,6 +142,7 @@ export default function WithdrawalModal({
               onChange={(e) => setAmount(e.target.value)}
               placeholder="e.g. 200,000"
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring focus:ring-blue-100"
+              disabled={loading}
             />
           </div>
 
@@ -96,30 +150,24 @@ export default function WithdrawalModal({
           <div className="flex gap-3 mt-2">
             <button
               type="button"
-              className="flex-1 bg-[#012638] text-white py-2 rounded-md hover:bg-[#019893] transition"
-              onClick={() => {
-                // placeholder: hook into withdraw-partial logic
-                console.log("Withdraw Partial", { selectedInvestment, amount });
-                onClose();
-              }}
+              className="flex-1 bg-[#012638] text-white py-2 rounded-md hover:bg-[#019893] transition disabled:opacity-50"
+              disabled={loading}
+              onClick={() => handleWithdraw("partial")}
             >
-              Withdraw Partial
+              {loading ? "Processing..." : "Withdraw Partial"}
             </button>
 
             <button
               type="button"
-              className="flex-1 bg-[#012638] text-white py-2 rounded-md hover:bg-[#019893] transition"
-              onClick={() => {
-                // placeholder: hook into withdraw-full logic
-                console.log("Withdraw Full", { selectedInvestment });
-                onClose();
-              }}
+              className="flex-1 bg-[#012638] text-white py-2 rounded-md hover:bg-[#019893] transition disabled:opacity-50"
+              disabled={loading}
+              onClick={() => handleWithdraw("full")}
             >
-              Withdraw Full
+              {loading ? "Processing..." : "Withdraw Full"}
             </button>
           </div>
 
-          {/* Note text (exact wording included) */}
+          {/* Note */}
           <p className="text-xs text-gray-500 mt-2">
             Withdrawals can be made only after the investment lock-in period.
             Processing may take up to 2 business days.
