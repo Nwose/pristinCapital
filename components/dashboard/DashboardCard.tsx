@@ -1,4 +1,8 @@
+"use client";
+
 import { CalendarCheck2 } from "lucide-react";
+import { useRef, useState } from "react";
+import CalendarPopover from "../common/CalendarPopover";
 import { ReactNode } from "react";
 
 interface DashboardCardProps {
@@ -12,6 +16,7 @@ interface DashboardCardProps {
     text: string;
   };
   hasAction?: boolean;
+  onDateSelect?: (date: Date) => void;
 }
 
 export default function DashboardCard({
@@ -21,46 +26,54 @@ export default function DashboardCard({
   icon,
   trend,
   hasAction = false,
+  onDateSelect,
 }: DashboardCardProps) {
-  const trendColor =
-    trend?.type === "positive"
-      ? "text-[#019893]"
-      : trend?.type === "negative"
-      ? "text-red-600"
-      : "text-blue-600";
+  const [openCal, setOpenCal] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div className="bg-white rounded-lg border border-[#ccEaE9] p-4 sm:p-6 relative">
-      {/* Top section */}
+      {/* Top */}
       <div className="flex items-start justify-between mb-4">
         <h3 className="text-base font-semibold text-[#012638]">{title}</h3>
         {icon && <span className="text-[#001B2E] text-xl">{icon}</span>}
       </div>
 
       {/* Amount */}
-      <p className="font-semibold text-[#00080B] text-2xl md:text-3xl mb-4 font-inter">
+      <p className="font-semibold text-[#00080B] text-2xl md:text-3xl mb-4">
         {amount}
       </p>
 
-      {/* Trend or subtitle */}
-      {trend && (
+      {/* Subtitle or Trend */}
+      {trend ? (
         <div className="flex items-center gap-1">
-          <span className="text-base text-[#019893] font-inter font-normal">
-            {trend.value}
-          </span>
-          <span className="text-sm text-[#019893] font-inter font-normal">
-            {trend.text}
-          </span>
+          <span className="text-base">{trend.value}</span>
+          <span className="text-sm">{trend.text}</span>
         </div>
+      ) : (
+        subtitle && (
+          <p className="text-sm text-[#019893] font-medium">{subtitle}</p>
+        )
       )}
 
-      {subtitle && !trend && (
-        <p className="text-sm text-[#019893] font-medium">{subtitle}</p>
-      )}
-
-      {/* Action icon */}
+      {/* Calendar Action Icon */}
       {hasAction && (
-        <CalendarCheck2 className="absolute bottom-4 sm:bottom-6 right-4 sm:right-6 text-[#001B2E] w-5 h-5" />
+        <>
+          <button
+            ref={buttonRef}
+            onClick={() => setOpenCal(!openCal)}
+            className="absolute bottom-4 sm:bottom-6 right-4 sm:right-6"
+          >
+            <CalendarCheck2 className="text-[#001B2E] w-5 h-5" />
+          </button>
+
+          <CalendarPopover
+            isOpen={openCal}
+            onClose={() => setOpenCal(false)}
+            onSelect={(date) => onDateSelect?.(date)}
+            anchorRef={buttonRef}
+          />
+        </>
       )}
     </div>
   );

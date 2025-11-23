@@ -1,4 +1,4 @@
-import React from "react";
+// src/app/admin/users/page.tsx
 import AdminHeader from "@/components/admin/AdminHeader";
 import CustomerTable from "@/components/users/CustomerTable";
 
@@ -8,13 +8,11 @@ export default function AdminUser() {
       <AdminHeader />
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Page Title */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
           <p className="text-gray-600">Manage your customers</p>
         </div>
 
-        {/* Customers Table */}
         <CustomerTable />
       </main>
     </div>

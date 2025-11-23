@@ -3,25 +3,17 @@
 import React from "react";
 
 type MaturityInvestment = {
+  id: string;
   user: string;
-  plan: string;
+  planName: string;
   maturityDate: string;
 };
 
-const nearingMaturity: MaturityInvestment[] = [
-  {
-    user: "Noah Foster",
-    plan: "Short Term Deposit",
-    maturityDate: "2023-08-12",
-  },
-  {
-    user: "Liam Carter",
-    plan: "Growth Fund",
-    maturityDate: "2024-09-01",
-  },
-];
-
-export default function MaturityTable() {
+export default function MaturityTable({
+  maturities,
+}: {
+  maturities: MaturityInvestment[];
+}) {
   return (
     <div className="bg-white shadow-sm rounded-lg p-6 mt-10">
       <h3 className="text-lg font-semibold text-gray-800 mb-4">
@@ -40,12 +32,12 @@ export default function MaturityTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {nearingMaturity.map((inv, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
+            {maturities.map((inv) => (
+              <tr key={inv.id} className="hover:bg-gray-50">
                 <td className="px-6 py-3 font-medium text-gray-800">
                   {inv.user}
                 </td>
-                <td className="px-6 py-3 text-gray-700">{inv.plan}</td>
+                <td className="px-6 py-3 text-gray-700">{inv.planName}</td>
                 <td className="px-6 py-3 text-gray-700">{inv.maturityDate}</td>
                 <td className="px-6 py-3">
                   <button className="bg-blue-600 text-white text-sm font-medium px-4 py-1.5 rounded-md hover:bg-blue-700 transition">
@@ -54,6 +46,13 @@ export default function MaturityTable() {
                 </td>
               </tr>
             ))}
+            {maturities.length === 0 && (
+              <tr>
+                <td colSpan={4} className="py-6 px-4 text-center text-gray-500">
+                  No maturities to display.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

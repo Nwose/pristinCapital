@@ -17,56 +17,66 @@ export default function AdminHeader() {
     avatar: "/images/profile.jpg",
   });
 
+  // 🔥 Updated nav order — Loans is now 3rd
   const navLinks = [
     { name: "Dashboard", href: "/admin/dashboard" },
     { name: "Users", href: "/admin/users" },
+    { name: "Loans", href: "#" }, // placeholder, dropdown replaces the click
     { name: "Investments", href: "/admin/investments" },
     { name: "KYC", href: "/admin/kyc" },
     { name: "Penalty", href: "/admin/penalty" },
   ];
 
-  // ✅ Validate token only (skip restricted /users/me)
+  // 🔥 Validate admin token + load profile
   useEffect(() => {
     const token = localStorage.getItem("access_token");
 
     if (!token) {
-      console.warn("No token found — redirecting to login");
       router.push("/admin/login");
       return;
     }
 
-    // Optionally, test admin auth with a lightweight accessible endpoint
-    const validateAdminToken = async () => {
+    const validateAdmin = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        // 🔥 1. Validate token
+        const validateRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/admin/just_testing/`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-        if (res.status === 401) {
-          console.warn("Session expired — logging out");
+        if (!validateRes.ok) {
           localStorage.removeItem("access_token");
           router.push("/admin/login");
           return;
         }
 
-        // If the admin endpoint responds OK, we keep defaults
-        if (res.ok) {
+        // 🔥 2. Load admin profile
+        const profileRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/admin/me/`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (profileRes.ok) {
+          const data = await profileRes.json();
+
           setAdminData({
-            name: "Admin",
-            avatar: "/images/profile.jpg",
+            name: data?.full_name || "Admin",
+            avatar: data?.avatar || "/images/profile.jpg",
           });
         }
-      } catch (err) {
-        console.error("Error validating admin token:", err);
+      } catch (error) {
+        console.error("Admin validation error:", error);
       }
     };
 
-    validateAdminToken();
+    validateAdmin();
   }, [router]);
 
-  // ✅ Logout handler
+  // 🔥 Logout handler
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     router.push("/admin/login");
@@ -91,25 +101,30 @@ export default function AdminHeader() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8 relative">
-          {navLinks.map((link) => {
-            const isActive =
-              pathname === link.href || pathname.startsWith(link.href + "/");
-            return (
-              <Link
-                key={link.name}
-                href={link.href}
-                className={`pb-1 transition ${
-                  isActive
-                    ? "text-teal-600 font-semibold border-b-2 border-teal-600"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                {link.name}
-              </Link>
-            );
-          })}
+          {/* Dashboard + Users */}
+          <Link
+            href="/admin/dashboard"
+            className={`pb-1 transition ${
+              pathname.startsWith("/admin/dashboard")
+                ? "text-teal-600 font-semibold border-b-2 border-teal-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Dashboard
+          </Link>
 
-          {/* Loans Dropdown */}
+          <Link
+            href="/admin/users"
+            className={`pb-1 transition ${
+              pathname.startsWith("/admin/users")
+                ? "text-teal-600 font-semibold border-b-2 border-teal-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Users
+          </Link>
+
+          {/* 🔥 LOANS DROPDOWN — Now Position 3 */}
           <div className="relative">
             <button
               onClick={() => setLoanDropdownOpen(!loanDropdownOpen)}
@@ -147,6 +162,42 @@ export default function AdminHeader() {
               </div>
             )}
           </div>
+
+          {/* Investments */}
+          <Link
+            href="/admin/investments"
+            className={`pb-1 transition ${
+              pathname.startsWith("/admin/investments")
+                ? "text-teal-600 font-semibold border-b-2 border-teal-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Investments
+          </Link>
+
+          {/* KYC */}
+          <Link
+            href="/admin/kyc"
+            className={`pb-1 transition ${
+              pathname.startsWith("/admin/kyc")
+                ? "text-teal-600 font-semibold border-b-2 border-teal-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            KYC
+          </Link>
+
+          {/* Penalty */}
+          <Link
+            href="/admin/penalty"
+            className={`pb-1 transition ${
+              pathname.startsWith("/admin/penalty")
+                ? "text-teal-600 font-semibold border-b-2 border-teal-600"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Penalty
+          </Link>
         </nav>
 
         {/* Right side */}
@@ -196,29 +247,34 @@ export default function AdminHeader() {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
+      {/* 🔥 Mobile Navigation (Loans still 3rd) */}
       {isOpen && (
         <div className="md:hidden mt-3 bg-gray-50 border-t border-gray-200 rounded-lg shadow-sm p-4 space-y-3 animate-fadeIn">
-          {[...navLinks].map((link) => {
-            const isActive =
-              pathname === link.href || pathname.startsWith(link.href + "/");
-            return (
-              <Link
-                key={link.name}
-                href={link.href}
-                onClick={() => setIsOpen(false)}
-                className={`block text-sm px-2 py-1 rounded transition ${
-                  isActive
-                    ? "text-teal-600 font-semibold bg-teal-50"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                {link.name}
-              </Link>
-            );
-          })}
+          <Link
+            href="/admin/dashboard"
+            onClick={() => setIsOpen(false)}
+            className={`block text-sm px-2 py-1 rounded transition ${
+              pathname.startsWith("/admin/dashboard")
+                ? "text-teal-600 font-semibold bg-teal-50"
+                : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+            }`}
+          >
+            Dashboard
+          </Link>
 
-          {/* Loans dropdown items on mobile */}
+          <Link
+            href="/admin/users"
+            onClick={() => setIsOpen(false)}
+            className={`block text-sm px-2 py-1 rounded transition ${
+              pathname.startsWith("/admin/users")
+                ? "text-teal-600 font-semibold bg-teal-50"
+                : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+            }`}
+          >
+            Users
+          </Link>
+
+          {/* Mobile Loans dropdown placement */}
           <div>
             <p className="text-sm font-semibold text-gray-700 mt-2 mb-1">
               Loans
@@ -238,6 +294,42 @@ export default function AdminHeader() {
               Loan Products
             </Link>
           </div>
+
+          <Link
+            href="/admin/investments"
+            onClick={() => setIsOpen(false)}
+            className={`block text-sm px-2 py-1 rounded transition ${
+              pathname.startsWith("/admin/investments")
+                ? "text-teal-600 font-semibold bg-teal-50"
+                : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+            }`}
+          >
+            Investments
+          </Link>
+
+          <Link
+            href="/admin/kyc"
+            onClick={() => setIsOpen(false)}
+            className={`block text-sm px-2 py-1 rounded transition ${
+              pathname.startsWith("/admin/kyc")
+                ? "text-teal-600 font-semibold bg-teal-50"
+                : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+            }`}
+          >
+            KYC
+          </Link>
+
+          <Link
+            href="/admin/penalty"
+            onClick={() => setIsOpen(false)}
+            className={`block text-sm px-2 py-1 rounded transition ${
+              pathname.startsWith("/admin/penalty")
+                ? "text-teal-600 font-semibold bg-teal-50"
+                : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+            }`}
+          >
+            Penalty
+          </Link>
         </div>
       )}
     </header>

@@ -3,58 +3,20 @@
 import React from "react";
 
 type UserInvestment = {
+  id: string;
   user: string;
-  plan: string;
-  amount: string;
+  planName: string;
+  amount: number;
   startDate: string;
   maturityDate: string;
-  earnings: string;
+  earnings: number;
 };
 
-const userInvestments: UserInvestment[] = [
-  {
-    user: "Liam Carter",
-    plan: "Growth Fund",
-    amount: "₦10,000",
-    startDate: "2023-09-01",
-    maturityDate: "2024-09-01",
-    earnings: "$850",
-  },
-  {
-    user: "Olivia Bennett",
-    plan: "Secure Savings",
-    amount: "₦5,000",
-    startDate: "2023-08-15",
-    maturityDate: "2025-08-15",
-    earnings: "$620",
-  },
-  {
-    user: "Ethan Harper",
-    plan: "Balanced Portfolio",
-    amount: "₦7,500",
-    startDate: "2023-07-20",
-    maturityDate: "2025-01-20",
-    earnings: "$780",
-  },
-  {
-    user: "Ava Morgan",
-    plan: "Growth Fund",
-    amount: "₦12,000",
-    startDate: "2023-06-05",
-    maturityDate: "2024-06-05",
-    earnings: "$1,020",
-  },
-  {
-    user: "Noah Foster",
-    plan: "Short Term Deposit",
-    amount: "₦2,000",
-    startDate: "2023-05-12",
-    maturityDate: "2023-08-12",
-    earnings: "$110",
-  },
-];
-
-export default function UserInvestmentsTable() {
+export default function UserInvestmentsTable({
+  investments,
+}: {
+  investments: UserInvestment[];
+}) {
   return (
     <div className="bg-white shadow-sm rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
@@ -77,18 +39,29 @@ export default function UserInvestmentsTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {userInvestments.map((inv, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
+            {investments.map((inv) => (
+              <tr key={inv.id} className="hover:bg-gray-50">
                 <td className="px-6 py-3 font-medium text-gray-800">
                   {inv.user}
                 </td>
-                <td className="px-6 py-3 text-gray-700">{inv.plan}</td>
-                <td className="px-6 py-3 text-gray-700">{inv.amount}</td>
+                <td className="px-6 py-3 text-gray-700">{inv.planName}</td>
+                <td className="px-6 py-3 text-gray-700">
+                  ₦{inv.amount.toLocaleString()}
+                </td>
                 <td className="px-6 py-3 text-gray-700">{inv.startDate}</td>
                 <td className="px-6 py-3 text-gray-700">{inv.maturityDate}</td>
-                <td className="px-6 py-3 text-gray-700">{inv.earnings}</td>
+                <td className="px-6 py-3 text-gray-700">
+                  ₦{inv.earnings.toLocaleString()}
+                </td>
               </tr>
             ))}
+            {investments.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-6 px-4 text-center text-gray-500">
+                  No user investments found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

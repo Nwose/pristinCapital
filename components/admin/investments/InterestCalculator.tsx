@@ -10,7 +10,8 @@ export default function InterestCalculator() {
 
   const handleCalculate = () => {
     if (amount && rate && months) {
-      const interest = amount * (rate / 100) * (months / 12);
+      const interest =
+        Number(amount) * (Number(rate) / 100) * (Number(months) / 12);
       setEstimatedReturn(interest);
     } else {
       setEstimatedReturn(0);
@@ -32,7 +33,9 @@ export default function InterestCalculator() {
           <input
             type="number"
             value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
+            onChange={(e) =>
+              setAmount(e.target.value === "" ? "" : Number(e.target.value))
+            }
             placeholder="Enter amount"
             className="w-full border border-gray-300 rounded-md px-3 py-2 mt-1 text-sm focus:ring-2 focus:ring-teal-500"
           />
@@ -46,7 +49,9 @@ export default function InterestCalculator() {
           <input
             type="number"
             value={rate}
-            onChange={(e) => setRate(Number(e.target.value))}
+            onChange={(e) =>
+              setRate(e.target.value === "" ? "" : Number(e.target.value))
+            }
             placeholder="Enter rate"
             className="w-full border border-gray-300 rounded-md px-3 py-2 mt-1 text-sm focus:ring-2 focus:ring-teal-500"
           />
@@ -60,7 +65,9 @@ export default function InterestCalculator() {
           <input
             type="number"
             value={months}
-            onChange={(e) => setMonths(Number(e.target.value))}
+            onChange={(e) =>
+              setMonths(e.target.value === "" ? "" : Number(e.target.value))
+            }
             placeholder="Enter tenure"
             className="w-full border border-gray-300 rounded-md px-3 py-2 mt-1 text-sm focus:ring-2 focus:ring-teal-500"
           />

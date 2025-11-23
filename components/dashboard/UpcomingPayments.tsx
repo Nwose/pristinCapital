@@ -1,43 +1,39 @@
-import {
-  CalendarCheck,
-  TrendingUp,
-  Wallet,
-  FileStack,
-  ChevronRight,
-} from "lucide-react";
-import { ReactNode } from "react";
+"use client";
 
-const payments: {
-  id: number;
-  title: string;
-  dueDate: string;
-  amount: string;
-  icon: ReactNode;
-}[] = [
-  {
-    id: 1,
-    title: "Loan Repayment",
-    dueDate: "Due 2025-06-15",
-    amount: "₦420",
-    icon: <FileStack className="w-5 h-5 text-[#001B2E]" />,
-  },
-  {
-    id: 2,
-    title: "Invest Auto-Debit",
-    dueDate: "Due 2025-05-25",
-    amount: "₦300",
-    icon: <TrendingUp className="w-5 h-5 text-[#001B2E]" />,
-  },
-  {
-    id: 3,
-    title: "Wallet Top-up",
-    dueDate: "Due 2025-06-04",
-    amount: "₦150",
-    icon: <Wallet className="w-5 h-5 text-[#001B2E]" />,
-  },
-];
+import { useEffect, useState } from "react";
+import { CalendarCheck, FileStack, TrendingUp, Wallet } from "lucide-react";
+import {
+  getUpcomingPayments,
+  UpcomingPayment,
+} from "@/services/payment.service";
 
 export default function UpcomingPayments() {
+  const [payments, setPayments] = useState<UpcomingPayment[]>([]);
+
+  useEffect(() => {
+    fetchPayments();
+  }, []);
+
+  const fetchPayments = async () => {
+    try {
+      const data = await getUpcomingPayments();
+      setPayments(data);
+    } catch (err) {
+      console.error("Error fetching upcoming payments:", err);
+    }
+  };
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case "loan":
+        return <FileStack className="w-5 h-5 text-[#001B2E]" />;
+      case "investment":
+        return <TrendingUp className="w-5 h-5 text-[#001B2E]" />;
+      default:
+        return <Wallet className="w-5 h-5 text-[#001B2E]" />;
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-[#ccEaE9] p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
@@ -58,19 +54,19 @@ export default function UpcomingPayments() {
             }`}
           >
             <div className="flex items-center">
-              <div
-                className={`w-10 h-10 bg-[#CCEAE9] rounded-lg flex items-center justify-center mr-4`}
-              >
-                {payment.icon}
+              <div className="w-10 h-10 bg-[#CCEAE9] rounded-lg flex items-center justify-center mr-4">
+                {getIcon(payment.type)}
               </div>
               <div>
                 <p className="font-medium text-[#001B2E]">{payment.title}</p>
-                <p className="text-sm text-gray-500">{payment.dueDate}</p>
+                <p className="text-sm text-gray-500">
+                  {new Date(payment.dueDate).toLocaleDateString()}
+                </p>
               </div>
             </div>
             <div className="flex items-center self-start sm:self-auto">
               <span className="font-semibold text-gray-900 mr-2">
-                {payment.amount}
+                ₦{payment.amount.toLocaleString()}
               </span>
               <span className="text-gray-400 w-5 h-5 flex items-center justify-center">
                 &rarr;

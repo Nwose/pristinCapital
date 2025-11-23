@@ -29,3 +29,46 @@ export async function withdrawFunds(payload: any) {
   toast.error("Withdrawal is being finalized. Coming this week!");
   throw new Error("Withdrawal endpoint not available yet");
 }
+
+// ----------------------
+//  📌 PLAN MANAGEMENT
+// ----------------------
+
+// Fetch all investment plans (loan products)
+export async function getInvestmentPlans() {
+  return await makeRequest("/api/v1/loan-product/", "GET");
+}
+
+// Create investment plan
+export async function createInvestmentPlan(payload: any) {
+  return await makeRequest("/api/v1/loan-product/", "POST", payload);
+}
+
+// Update investment plan
+export async function updateInvestmentPlan(id: string, payload: any) {
+  return await makeRequest(`/api/v1/loan-product/${id}/`, "PUT", payload);
+}
+
+// Delete investment plan
+export async function deleteInvestmentPlan(id: string) {
+  return await makeRequest(`/api/v1/loan-product/${id}/`, "DELETE");
+}
+
+// Get investment config
+export async function getInvestmentConfig() {
+  return await makeRequest("/api/v1/loan-product/get_config/", "GET");
+}
+
+// ----------------------
+//  📌 USER INVESTMENTS
+// ----------------------
+export async function getAllUserInvestments() {
+  return await makeRequest("/api/v1/investment/just_testing/", "GET");
+}
+
+// ----------------------
+//  📌 MATURITY DATA (TEMP)
+// ----------------------
+export async function getMaturityInvestments() {
+  return await makeRequest("/api/v1/investment/just_testing/", "GET");
+}

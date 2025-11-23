@@ -6,7 +6,7 @@ import { RefreshCw, DollarSign, Shield } from "lucide-react";
 
 type Category = "loan" | "investment" | "system";
 
-type Notification = {
+export type NotificationType = {
   id: string;
   title: string;
   message: string;
@@ -15,7 +15,12 @@ type Notification = {
   isRead: boolean;
 };
 
-const MOCK_DATA: Notification[] = [
+type NotificationsPageProps = {
+  headerTitle?: string;
+  notifications?: NotificationType[]; // Optional prop
+};
+
+const MOCK_DATA: NotificationType[] = [
   {
     id: "n1",
     title: "Investment Maturity",
@@ -62,20 +67,30 @@ const formatDate = (iso: string) => {
   return `${Math.floor(diff / day)} days ago`;
 };
 
-export default function NotificationsPage() {
-  const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+export default function NotificationsPage({
+  headerTitle = "Notifications Center",
+  notifications: initialNotifications,
+}: NotificationsPageProps) {
+  const [loading, setLoading] = useState(!initialNotifications);
+  const [notifications, setNotifications] = useState<NotificationType[]>(
+    initialNotifications || []
+  );
   const [activeTab, setActiveTab] = useState<"all" | Category>("all");
   const [visibleCount, setVisibleCount] = useState(4);
 
+  // Fetch mock data if notifications prop is not provided
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setNotifications(MOCK_DATA);
-      setLoading(false);
-    }, 800);
-  }, []);
+    if (!initialNotifications) {
+      setLoading(true);
+      const timer = setTimeout(() => {
+        setNotifications(MOCK_DATA);
+        setLoading(false);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [initialNotifications]);
 
+  // Filter notifications based on active tab
   const filtered = useMemo(() => {
     if (activeTab === "all") return notifications;
     return notifications.filter((n) => n.category === activeTab);
@@ -89,10 +104,9 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-[#0F2A33]">
-          Notifications Center
-        </h1>
+        <h1 className="text-2xl font-semibold text-[#0F2A33]">{headerTitle}</h1>
         <button
           onClick={markAllAsRead}
           className="text-sm text-[#009688] hover:underline"
@@ -101,6 +115,7 @@ export default function NotificationsPage() {
         </button>
       </div>
 
+      {/* Notification Container */}
       <div className="bg-white rounded-2xl shadow-sm border border-[#D7EEEA] p-6">
         {/* Tabs */}
         <div className="flex gap-3 mb-6">
@@ -125,7 +140,7 @@ export default function NotificationsPage() {
           ))}
         </div>
 
-        {/* List */}
+        {/* Notification List */}
         {loading ? (
           <div className="py-10 text-center text-gray-500">
             Loading notifications...
@@ -147,6 +162,7 @@ export default function NotificationsPage() {
                     : "border-[#E3F4F1] bg-white"
                 }`}
               >
+                {/* Icon */}
                 <div className="w-12 h-12 rounded-full border flex items-center justify-center">
                   {n.category === "investment" ? (
                     <DollarSign size={20} className="text-[#0F9A86]" />
@@ -156,6 +172,8 @@ export default function NotificationsPage() {
                     <Shield size={20} className="text-[#F6B83A]" />
                   )}
                 </div>
+
+                {/* Content */}
                 <div className="flex-1">
                   <div className="flex justify-between items-start">
                     <h3 className="text-sm font-semibold text-[#0F2A33]">
@@ -172,7 +190,7 @@ export default function NotificationsPage() {
           </div>
         )}
 
-        {/* Load more */}
+        {/* Load More Button */}
         {filtered.length > visibleCount && (
           <div className="mt-8 flex justify-center">
             <button

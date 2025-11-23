@@ -36,6 +36,8 @@ export async function send(
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
+    console.error("BACKEND RAW ERROR:", data);
+
     const msg =
       data?.detail ||
       data?.message ||
@@ -96,6 +98,7 @@ export async function makeRequest<T = any>(
     }
 
     if (!res.ok) {
+      console.error("📌 BACKEND RAW ERROR:", data);
       const message =
         data?.detail ||
         data?.message ||

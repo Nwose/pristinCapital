@@ -26,13 +26,11 @@ export default function InvestmentsPage() {
   const [completedInvestments, setCompletedInvestments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch investment products & user investments
   useEffect(() => {
     async function fetchData() {
       const products = await getInvestmentProducts();
       const userInvestments = await getUserInvestments();
 
-      // Handle investment products
       if (Array.isArray(products) && products.length > 0) {
         setInvestmentProducts(products);
         toast.success(
@@ -42,15 +40,12 @@ export default function InvestmentsPage() {
         );
       } else {
         setInvestmentProducts([]);
-        // Only show info if it's not a test endpoint
         if (products && !Array.isArray(products)) {
           toast.info("Investment products are being set up. Check back soon!");
         }
       }
 
-      // Handle wallet/investment data structure
       if (Array.isArray(userInvestments) && userInvestments.length > 0) {
-        // ✅ Split user investments based on status
         const active = userInvestments.filter(
           (inv: any) => inv.status === "active"
         );
@@ -81,12 +76,10 @@ export default function InvestmentsPage() {
     fetchData();
   }, []);
 
-  // ✅ Handle Fund Wallet navigation
   const handleFundWallet = () => {
     router.push("/dashboard/investments/confirm-investment");
   };
 
-  // ✅ Handle Invest Now
   const handleInvestClick = async (product: any) => {
     try {
       toast.info("Processing your investment...");
@@ -103,7 +96,6 @@ export default function InvestmentsPage() {
     }
   };
 
-  // ✅ Loading state
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64 text-[#012638] font-semibold">
@@ -155,9 +147,9 @@ export default function InvestmentsPage() {
       {/* Investment Products Row */}
       {investmentProducts.length > 0 ? (
         <div className="flex flex-col md:flex-row gap-6">
-          {investmentProducts.map((inv) => (
+          {investmentProducts.map((inv, index) => (
             <div
-              key={inv.id}
+              key={`${inv.id}-${index}`}
               className="flex-1 bg-white border border-[#CCEAE9] rounded-xl p-6 min-w-[270px] max-w-[350px] shadow-sm"
             >
               <div className="flex items-center gap-2 mb-2">
@@ -262,9 +254,9 @@ export default function InvestmentsPage() {
         <div className="flex flex-col md:flex-row gap-6 mb-8">
           {tab === "active" ? (
             activeInvestments.length > 0 ? (
-              activeInvestments.map((inv) => (
+              activeInvestments.map((inv, index) => (
                 <div
-                  key={inv.id}
+                  key={`${inv.id}-${index}`}
                   className="flex-1 bg-[#F6F8FA] border border-[#CCEAE9] rounded-xl p-6 min-w-[270px] max-w-[350px]"
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -304,9 +296,9 @@ export default function InvestmentsPage() {
               </div>
             )
           ) : completedInvestments.length > 0 ? (
-            completedInvestments.map((inv) => (
+            completedInvestments.map((inv, index) => (
               <div
-                key={inv.id}
+                key={`${inv.id}-${index}`}
                 className="flex-1 bg-[#F6F8FA] border border-[#CCEAE9] rounded-xl p-6 min-w-[270px] max-w-[350px]"
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -372,7 +364,7 @@ export default function InvestmentsPage() {
         </div>
       </div>
 
-      {/* ✅ Withdraw Modal */}
+      {/* Withdraw Modal */}
       <WithdrawModal
         isOpen={showWithdraw}
         onClose={() => setShowWithdraw(false)}
