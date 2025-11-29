@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
 import { ToastContainer } from "react-toastify";
+import { AuthProviderClient } from "@/lib/api/auth/AuthProviderClient";
 import "react-toastify/dist/ReactToastify.css";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Pristin Capital",
-  description: "Modern loan and investment platform",
+  description: "Secure loan and investment platform.",
 };
 
 const geist = Geist({
@@ -27,7 +28,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geist.variable} ${geistMono.variable} antialiased`}>
-        {children}
+        <AuthProviderClient>
+          {children}
+        </AuthProviderClient>
+
 
         {/* ✅ Toast notifications for success/error/info messages */}
         <ToastContainer
