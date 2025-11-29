@@ -32,16 +32,38 @@ import {
   RegisterDataType,
 } from "../types/auth";
 
+interface ApiErrorType {
+  message: string;
+  status: number;
+  code?: string;
+  details?: unknown;
+}
+
+function isApiErrorType(error: unknown): error is ApiErrorType {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as any).message === "string" &&
+    "status" in error &&
+    typeof (error as any).status === "number" &&
+    // Optional fields
+    (!("code" in error) || typeof (error as any).code === "string") &&
+    (!("details" in error) || true) // details can be anything
+  );
+}
+
+
 // Auth Store State
 interface AuthState {
   user: UserType | null;
   isLoading: boolean;
-  error: string | null;
+  error: ApiErrorType | null;
 
   // Actions
   setUser: (user: UserType | null) => void;
   setLoading: (isLoading: boolean) => void;
-  setError: (error: string | null) => void;
+  setError: (error: ApiErrorType | null) => void;
   clearError: () => void;
 }
 
@@ -73,7 +95,7 @@ export interface AuthContextType {
   user: UserType | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  error: string | null;
+  error: ApiErrorType | null;
   login: (credentials: LoginCredentialsType) => Promise<void>;
   register: (data: RegisterDataType) => Promise<void>;
   logout: () => Promise<void>;
@@ -189,10 +211,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       );
 
       // if the response is for 2FA we should redirect to the 2FA page
-      // if (isfirstfactorresponse) {
-      //   router.push(Routes.loginSecondFactor);
-      //   return;
-      // }
       if (isFirstFactor(response.data)) {
         // save the tfa token and redirect to the 2FA page
         localStorage.setItem("tfa_token", response.data.tfa_token);
@@ -208,12 +226,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
       console.log("[Auth] Login successful");
     } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Login failed. Please try again.";
-
-      setError(errorMessage);
+      if (isApiErrorType(error)) {
+        setError(error);
+      }
       throw error;
     } finally {
       setLoading(false);

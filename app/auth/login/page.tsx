@@ -1,82 +1,90 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import {
-  loginFirstFactor,
-  loginSecondFactor,
-  send2FA_OTP,
-} from "@/services/auth";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/api/auth/authContext";
+import { Routes } from "@/lib/api/FrontendRoutes";
+
+
+function isDetailsObject(details: unknown): details is { detail?: string; message?: string; error?: string } {
+  return typeof details === "object" && details !== null;
+}
+
 
 export default function Login() {
+  const router = useRouter();
+  const auth = useAuth();
+  const { login, isLoading, error, clearError } = auth;
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
-  const [tfaToken, setTfaToken] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loginError, setLoginError] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  // If a tfa flow was started previously, AuthProvider stores the tfa_token in localStorage.
+  // We detect that and advise the user to continue on the dedicated 2FA page.
+  const [hasTfaToken, setHasTfaToken] = useState(false);
+
+  useEffect(() => {
+    const t = typeof window !== "undefined" ? localStorage.getItem("tfa_token") : null;
+    setHasTfaToken(Boolean(t));
+  }, []);
+
+  // Clear context error when user edits inputs
+  useEffect(() => {
+    if (error) {
+      let msg: string;
+
+      if (error.details && isDetailsObject(error.details)) {
+        msg = (
+          error.details.detail ||
+          error.details.message ||
+          error.details.error) as string;
+        setErrorMsg(msg);
+      }
+
+      // do something with msg...
+    }
+  }, [error]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginError("");
+    clearError();
 
-    if (!email || !password) return;
-
-    setIsSubmitting(true);
+    if (!email || !password) {
+      // simple UX guard
+      return;
+    }
 
     try {
-      // ✅ loginFirstFactor already returns JSON
-      const data = await loginFirstFactor(email, password);
-
-      if (data?.tfa_token) {
-        setTfaToken(data.tfa_token);
-
-        // Auto-send 2FA OTP
-        await send2FA_OTP(data.tfa_token);
-      } else if (data?.access) {
-        // Some backends skip 2FA in dev mode
-        localStorage.setItem("access_token", data.access);
-        window.location.href = "/dashboard";
+      // pass shape your backend expects (email/password). AuthProvider will handle first-factor,
+      // tfa redirect, token storage, and user fetch as implemented there.
+      await login({ email, password });
+      // if login completes without 2FA, AuthProvider will have fetched user and you can redirect (optional)
+      // but avoid double-redirect: if the provider already redirects, this push will be harmless.
+      if (!localStorage.getItem("tfa_token")) {
+        // send user to dashboard/home after successful full-login
+        router.push(Routes.dashboard);
       } else {
-        setLoginError(data?.detail || "Invalid credentials");
+        // provider probably redirected to 2FA already; ensure user lands on the 2FA page
+        router.push(Routes.loginSecondFactor);
       }
-    } catch (error: any) {
-      console.error("Login error:", error);
-      setLoginError(error.message || "An error occurred. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+    } catch (err) {
+      // auth.login already sets error in context; we only log here for debugging
+      console.error("[Login] login failed:", err);
     }
   };
 
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otp || !tfaToken) return;
-
-    setIsSubmitting(true);
-    setLoginError("");
-
-    try {
-      const data = await loginSecondFactor(tfaToken, otp);
-
-      if (data?.access) {
-        localStorage.setItem("access_token", data.access);
-        localStorage.setItem("refresh_token", data.refresh);
-        window.location.href = "/dashboard";
-      } else {
-        setLoginError(data?.detail || "Invalid or expired OTP");
-      }
-    } catch (error: any) {
-      console.error("2FA verification error:", error);
-      setLoginError(error.message || "Failed to verify OTP. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (error) clearError();
+    setEmail(e.target.value);
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (error) clearError();
     setPassword(e.target.value);
-    if (loginError) setLoginError("");
   };
 
   return (
@@ -162,116 +170,90 @@ export default function Login() {
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-3">
-                {tfaToken ? "Two-Factor Authentication" : "Welcome Back"}
+                Welcome Back
               </h2>
 
               <p className="text-center text-teal-600 mb-8 lg:mb-10 text-sm sm:text-base">
-                {tfaToken
-                  ? "Enter the OTP from your Authenticator App or email"
-                  : "Sign up or log in to your account"}
+                Sign up or log in to your account
               </p>
 
-              {!tfaToken ? (
-                <form
-                  className="space-y-4 sm:space-y-6"
-                  onSubmit={handleSubmit}
-                >
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3"
+              {hasTfaToken && (
+                <div className="mb-6 p-4 border-l-4 border-teal-500 bg-teal-50 text-sm text-teal-800 rounded">
+                  We detected an in-progress two-factor authentication flow.
+                  <div className="mt-2">
+                    <button
+                      onClick={() => router.push(Routes.loginSecondFactor ?? "/auth/2fa")}
+                      className="underline font-medium"
                     >
-                      Email or Phone Number
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Samuel@thehiveincubator.com"
-                      className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-teal-500 rounded-lg focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none transition-all text-gray-700 placeholder-gray-400 bg-gray-50 text-sm sm:text-base"
-                    />
+                      Continue to Two-Factor Authentication
+                    </button>
                   </div>
+                </div>
+              )}
 
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3"
-                    >
-                      Password
-                    </label>
+              <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3"
+                  >
+                    Email or Phone Number
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={handleEmailChange}
+                    placeholder="Samuel@thehiveincubator.com"
+                    className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-teal-500 rounded-lg focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none transition-all text-gray-700 placeholder-gray-400 bg-gray-50 text-sm sm:text-base"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3"
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
                       id="password"
                       value={password}
                       onChange={handlePasswordChange}
                       placeholder="Enter your password"
-                      className={`w-full px-3 sm:px-4 py-3 sm:py-4 border-2 rounded-lg focus:ring-2 focus:ring-teal-200 outline-none transition-all text-gray-700 bg-gray-50 text-sm sm:text-base ${
-                        loginError
-                          ? "border-red-500 focus:border-red-500"
-                          : "border-teal-500 focus:border-teal-500"
-                      }`}
+                      className={`w-full px-3 sm:px-4 py-3 sm:py-4 border-2 rounded-lg focus:ring-2 focus:ring-teal-200 outline-none transition-all text-gray-700 bg-gray-50 text-sm sm:text-base ${error ? "border-red-500 focus:border-red-500" : "border-teal-500 focus:border-teal-500"
+                        }`}
                     />
-                    {loginError && (
-                      <p className="text-red-500 text-sm mt-2">{loginError}</p>
-                    )}
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg transition-colors shadow-lg ${
-                      isSubmitting
-                        ? "bg-gray-300 text-gray-500"
-                        : "bg-slate-800 hover:bg-slate-900 text-white"
-                    }`}
-                  >
-                    {isSubmitting ? "Logging In..." : "Log In"}
-                  </button>
-                </form>
-              ) : (
-                <form className="space-y-6" onSubmit={handleVerifyOTP}>
-                  <div>
-                    <label
-                      htmlFor="otp"
-                      className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3"
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((s) => !s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-xs sm:text-sm text-gray-500"
                     >
-                      Enter OTP
-                    </label>
-                    <input
-                      type="text"
-                      id="otp"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      placeholder="Enter 6-digit code"
-                      className="w-full px-4 py-3 border-2 border-teal-500 rounded-lg focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none transition-all text-gray-700 bg-gray-50"
-                    />
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
                   </div>
 
-                  {loginError && (
-                    <p className="text-red-500 text-sm">{loginError}</p>
-                  )}
+                  {error && <p className="text-red-500 text-sm mt-2">{errorMsg}</p>}
+                </div>
 
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg transition-colors shadow-lg ${
-                      isSubmitting
-                        ? "bg-gray-300 text-gray-500"
-                        : "bg-slate-800 hover:bg-slate-900 text-white"
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`w-full py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg transition-colors shadow-lg ${isLoading ? "bg-gray-300 text-gray-500" : "bg-slate-800 hover:bg-slate-900 text-white"
                     }`}
-                  >
-                    {isSubmitting ? "Verifying..." : "Verify OTP"}
-                  </button>
-                </form>
-              )}
+                >
+                  {isLoading ? "Logging In..." : "Log In"}
+                </button>
+              </form>
             </div>
           </div>
         </div>
 
         <div className="bg-white text-teal-600 py-4 sm:py-6 text-center shadow-xl">
           <p className="text-xs sm:text-sm mb-3 sm:mb-4 px-4">
-            © 2025 FintechApp. All rights reserved.
+            © 2025 Pristin. All rights reserved.
           </p>
         </div>
       </div>

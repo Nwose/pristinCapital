@@ -3,10 +3,12 @@
 // Development Routes
 export const Routes = {
     home: "/",
-    login: "/login",
-    register: "/sign-up",
+    login: "/auth/login",
+    register: "/auth/sign-up",
     chats: "/tests/chats",
-    loginSecondFactor: "/verify-email",
-    // dashboard: "/dashboard",
+    loginSecondFactor: "/auth/login/2stfactor",
+    verifyEmailOTP: "/auth/verify-email",
+    verifyPhoneOTP: "/auth/verify-phone",
+    forgotPassword: "/auth/forgot-password",
     dashboard: "/dashboard",
 }

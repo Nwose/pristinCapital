@@ -9,7 +9,7 @@ export interface UserType {
 }
 
 export interface LoginCredentialsType {
-  username: string;
+  email: string;
   password: string;
 }
 

@@ -12,3 +12,4 @@ diff:
 	rm a.diff
 	git add .
 	git commit
+	git push
