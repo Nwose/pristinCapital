@@ -4,6 +4,11 @@ import Sidebar from "../../components/dashboard/Sidebar";
 import Header from "../../components/dashboard/Header";
 import Notification from "../../components/dashboard/Notification";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/api/auth/authContext";
+import { authUtils, TokenResponse } from "@/lib/api/auth/TokenManager";
+import { toast as toastFn } from "react-toastify";
+import { FrontendRoutes } from "@/lib/api/FrontendRoutes";
+import { useRouter } from "next/navigation";
 
 export default function DashboardLayout({
   children,
@@ -12,6 +17,8 @@ export default function DashboardLayout({
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
+  const { user, fetchCurrentUser } = useAuth();
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -28,6 +35,14 @@ export default function DashboardLayout({
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(()=>{
+    if (!authUtils.isAuthenticated()){
+      router.push(FrontendRoutes.login);
+    }else{
+      fetchCurrentUser();  // fetch non blockingly
+    }
   }, []);
 
   return (

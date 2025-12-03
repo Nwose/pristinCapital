@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/api/auth/authContext";
 import { authUtils, TokenResponse } from "@/lib/api/auth/TokenManager";
+import { isErrorWithCodeType } from "@/lib/api/ApiClient";
 import { toast as toastFn } from "react-toastify";
 import { Routes } from "@/lib/api/FrontendRoutes";
 import { FrontendRoutes } from "@/lib/api/FrontendRoutes";
@@ -18,7 +19,7 @@ function isDetailsObject(details: unknown): details is { detail?: string; messag
 export default function Login() {
   const router = useRouter();
   const auth = useAuth();
-  const { login, isLoading, error, clearError, partialUser } = auth;
+  const { user, login, isLoading, error, clearError, partialUser } = auth;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,7 +73,7 @@ export default function Login() {
       await login({ email, password });
       // if login completes without 2FA, AuthProvider will have fetched user and you can redirect (optional)
       // but avoid double-redirect: if the provider already redirects, this push will be harmless.
-      if (!localStorage.getItem("tfa_token")) {
+      if (!localStorage.getItem("tfa_token") || user) {
         // send user to dashboard/home after successful full-login
         router.push(Routes.dashboard);
       } else {
@@ -82,6 +83,9 @@ export default function Login() {
     } catch (err) {
       // auth.login already sets error in context; we only log here for debugging
       console.error("[Login] login failed:", err);
+      if (isErrorWithCodeType(err)){
+        setErrorMsg(err.message);
+      }
     }
   };
 

@@ -9,8 +9,11 @@ import {
   getDashboardData,
   Investment,
   Loan,
-  Wallet,
 } from "@/services/dashboard.service";
+import WalletService, {
+  Wallet, 
+  WalletList
+} from "@/lib/api/services/Wallet.Service";
 
 export default function Dashboard() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -21,11 +24,12 @@ export default function Dashboard() {
     fetchDashboard();
   }, []);
 
-  const fetchDashboard = async () => {
-    const { wallets, loans, investments } = await getDashboardData();
-    setWallet(wallets[0] || null);
-    setLoans(loans);
-    setInvestments(investments);
+  const fetchDashboard = () => {
+    WalletService.getMainWallet().then((mainWallet)=>{
+      if (mainWallet){
+        setWallet(mainWallet);
+      }
+    })
   };
 
   return (
@@ -57,12 +61,13 @@ export default function Dashboard() {
         {/* Wallet Balance */}
         <DashboardCard
           title="Wallet Balance"
+          wallet={wallet}
           amount={`₦${wallet?.balance.toLocaleString() || "0"}`}
           subtitle={
             wallet ? `Updated ${new Date().toLocaleDateString()}` : undefined
           }
           icon={<WalletIcon className="w-6 h-6" />}
-          hasAction
+          hasAction={true}
         />
       </div>
 

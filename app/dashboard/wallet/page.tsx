@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import AddBankModal from "@/components/banks/AddBankModal";
 import {
   getUserWallets,
   getUserBanks,
@@ -9,9 +10,16 @@ import {
   fundWallet,
   addBankAccount,
   getAllBanks,
-  type BankAccount,
-  type Wallet,
 } from "@/services/wallet.service";
+import WalletService, {
+  Wallet, 
+  WalletList
+} from "@/lib/api/services/Wallet.Service";
+import BankService, {
+  BankAccount,
+  BankAccountList,
+  SuppportedBankList,
+} from "@/lib/api/services/Bank.Service";
 import { toast } from "react-toastify";
 
 export default function WalletPage() {
@@ -19,7 +27,7 @@ export default function WalletPage() {
   const [tab, setTab] = useState<"fund" | "withdraw">("fund");
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [banks, setBanks] = useState<BankAccount[]>([]);
+  const [banks, setBanks] = useState<BankAccountList>([]);
   const [selectedBank, setSelectedBank] = useState<string>("");
   const [amount, setAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -27,9 +35,6 @@ export default function WalletPage() {
 
   // Modal state
   const [showAddBankModal, setShowAddBankModal] = useState(false);
-  const [allBanks, setAllBanks] = useState<{ name: string; code: string }[]>(
-    []
-  );
   const [newBankCode, setNewBankCode] = useState("");
   const [newAccountNumber, setNewAccountNumber] = useState("");
   const [addingBank, setAddingBank] = useState(false);
@@ -37,34 +42,36 @@ export default function WalletPage() {
   // Load wallet + banks on mount
   useEffect(() => {
     loadWalletData();
-    loadAllBanks();
   }, []);
-
-  const loadWalletData = async () => {
-    try {
-      setLoading(true);
-      const wallets = await getUserWallets();
-      const userBanks = await getUserBanks();
-      setWallet(wallets[0] || null);
-      setBanks(userBanks);
-      if (userBanks.length > 0) {
-        setSelectedBank(userBanks[0].id);
+  const loadMyBanks = ()=>{
+    BankService.getBanks().then((banks)=>{
+      if (banks){
+        setBanks(banks);
       }
-    } catch (error: any) {
-      console.error("Error loading wallet:", error);
-      toast.error("Failed to load wallet info.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadAllBanks = async () => {
-    try {
-      const banks = await getAllBanks();
-      setAllBanks(banks.map((b: any) => ({ name: b.name, code: b.code })));
-    } catch (error) {
-      console.error("Error fetching banks:", error);
-    }
+    })
+  }
+  const loadWalletData = async () => {
+    WalletService.getMainWallet().then((mainWallet)=>{
+      if (mainWallet){
+        setWallet(mainWallet);
+      }
+    })
+    loadMyBanks();
+    // try {
+    //   setLoading(true);
+    //   const wallets = await getUserWallets();
+    //   const userBanks = await getUserBanks();
+    //   setWallet(wallets[0] || null);
+    //   setBanks(userBanks);
+    //   if (userBanks.length > 0) {
+    //     setSelectedBank(userBanks[0].id);
+    //   }
+    // } catch (error: any) {
+    //   console.error("Error loading wallet:", error);
+    //   toast.error("Failed to load wallet info.");
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   // 🔹 Fund wallet
@@ -263,7 +270,7 @@ export default function WalletPage() {
                   >
                     {banks.map((bank) => (
                       <option key={bank.id} value={bank.id}>
-                        {bank.bank_name} - {bank.account_number}
+                        {bank.bank_name} - {bank.account_number} / {bank.account_name}
                       </option>
                     ))}
                   </select>
@@ -290,54 +297,12 @@ export default function WalletPage() {
 
       {/* Add Bank Modal */}
       {showAddBankModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md relative">
-            <button
-              onClick={() => setShowAddBankModal(false)}
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 font-bold text-lg"
-            >
-              ×
-            </button>
-            <h2 className="text-xl font-semibold mb-4">Add Bank Account</h2>
-
-            <div className="mb-4">
-              <label className="block text-gray-500 text-sm mb-2">Bank</label>
-              <select
-                value={newBankCode}
-                onChange={(e) => setNewBankCode(e.target.value)}
-                className="w-full border border-[#CCEAE9] rounded-lg px-3 py-2 bg-[#F6F8FA] text-sm focus:outline-none focus:ring-2 focus:ring-[#CCEAE9]"
-              >
-                <option value="">Select a bank</option>
-                {allBanks.map((bank) => (
-                  <option key={bank.code} value={bank.code}>
-                    {bank.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-500 text-sm mb-2">
-                Account Number
-              </label>
-              <input
-                type="text"
-                value={newAccountNumber}
-                onChange={(e) => setNewAccountNumber(e.target.value)}
-                placeholder="Enter account number"
-                className="w-full border border-[#CCEAE9] rounded-lg px-3 py-2 bg-[#F6F8FA] text-sm focus:outline-none focus:ring-2 focus:ring-[#CCEAE9]"
-              />
-            </div>
-
-            <button
-              onClick={handleAddBank}
-              disabled={addingBank}
-              className="w-full bg-[#012638] text-white py-2 rounded-lg font-semibold text-sm hover:bg-[#019893] transition-colors disabled:opacity-60"
-            >
-              {addingBank ? "Adding..." : "Add Bank"}
-            </button>
-          </div>
-        </div>
+        <AddBankModal 
+          setShowAddBankModal={setShowAddBankModal}
+          onBankAdded={()=>{
+            loadMyBanks();
+          }}
+        />
       )}
     </div>
   );

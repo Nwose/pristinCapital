@@ -15,12 +15,12 @@ export default function UpcomingPayments() {
   }, []);
 
   const fetchPayments = async () => {
-    try {
-      const data = await getUpcomingPayments();
-      setPayments(data);
-    } catch (err) {
-      console.error("Error fetching upcoming payments:", err);
-    }
+    // try {
+    //   const data = await getUpcomingPayments();
+    //   setPayments(data);
+    // } catch (err) {
+    //   console.error("Error fetching upcoming payments:", err);
+    // }
   };
 
   const getIcon = (type: string) => {

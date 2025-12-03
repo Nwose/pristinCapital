@@ -212,6 +212,7 @@ class TokenManager {
    * Refresh access token using refresh token
    */
   async refreshAccessToken(): Promise<string> {
+    console.log("REFRESHING TOKEN...");
     // Prevent multiple simultaneous refresh requests
     if (this.refreshPromise) {
       return this.refreshPromise;
@@ -231,6 +232,7 @@ class TokenManager {
    * Perform the actual token refresh
    */
   private async performTokenRefresh(): Promise<string> {
+    console.log("PERFORMING TOKEN REFRESH...")
     const state = useTokenStore.getState();
     
     if (state.isRefreshing) {
@@ -259,6 +261,7 @@ class TokenManager {
         throw new Error(`Token refresh failed: ${response.status}`);
       }
 
+      console.log("✅ TOKEN REFERESHED")
       const data: TokenResponse = await response.json();
       
       // Update tokens in store

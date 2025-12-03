@@ -4,6 +4,8 @@ import { CalendarCheck2 } from "lucide-react";
 import { useRef, useState } from "react";
 import CalendarPopover from "../common/CalendarPopover";
 import { ReactNode } from "react";
+import { Wallet } from "@/lib/api/services/Wallet.Service";
+
 
 interface DashboardCardProps {
   title: string;
@@ -16,6 +18,7 @@ interface DashboardCardProps {
     text: string;
   };
   hasAction?: boolean;
+  wallet?: Wallet | null;
   onDateSelect?: (date: Date) => void;
 }
 
@@ -27,6 +30,7 @@ export default function DashboardCard({
   trend,
   hasAction = false,
   onDateSelect,
+  wallet,
 }: DashboardCardProps) {
   const [openCal, setOpenCal] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -41,7 +45,7 @@ export default function DashboardCard({
 
       {/* Amount */}
       <p className="font-semibold text-[#00080B] text-2xl md:text-3xl mb-4">
-        {amount}
+        ₦{ wallet?.balance || "0.0" }
       </p>
 
       {/* Subtitle or Trend */}
@@ -57,7 +61,7 @@ export default function DashboardCard({
       )}
 
       {/* Calendar Action Icon */}
-      {hasAction && (
+      {/* {hasAction && (
         <>
           <button
             ref={buttonRef}
@@ -74,7 +78,7 @@ export default function DashboardCard({
             anchorRef={buttonRef}
           />
         </>
-      )}
+      )} */}
     </div>
   );
 }

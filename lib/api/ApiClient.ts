@@ -34,6 +34,27 @@ const API_CONFIG = {
 } as const;
 
 
+export interface ErrorWithCode {
+  message: string;
+  status: number;
+  code: string;
+  details?: unknown;
+}
+
+// Type guard
+export function isErrorWithCodeType(obj: unknown): obj is ErrorWithCode {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "message" in obj &&
+    typeof (obj as any).message === "string" &&
+    "status" in obj &&
+    typeof (obj as any).status === "number" &&
+    "code" in obj &&
+    typeof (obj as any).code === "string"
+  );
+}
+
 
 
 class ApiClient {
@@ -186,22 +207,25 @@ class ApiClient {
           response = await interceptor(response);
         }
 
-        // Handle 401 - Token expired
-        if (response.status === 401 && requiresAuth) {
-          console.warn('[ApiClient] Received 401, attempting token refresh');
-          
-          try {
-            await tokenManager.refreshAccessToken();
-            // Retry request with new token
-            return this.request<T>(endpoint, config);
-          } catch (refreshError) {
-            console.error('[ApiClient] Token refresh failed:', refreshError);
-            this.handleUnauthorized();
-            throw this.createError(
-              'Authentication session expired. Please login again.',
-              401,
-              'TOKEN_EXPIRED'
-            );
+        if (!response.ok){
+          const error = response;
+          if (isErrorWithCodeType(error)){
+            if (error.code === "TOKEN_EXPIRED"){
+              console.log("ApiClient: trying to referesh token...")
+              try {
+                await tokenManager.refreshAccessToken();
+                // Retry request with new token
+                return this.request<T>(endpoint, config);
+              } catch (refreshError) {
+                console.error('[ApiClient] Token refresh failed:', refreshError);
+                this.handleUnauthorized();
+                throw this.createError(
+                  'Authentication session expired. Please login again.',
+                  401,
+                  'TOKEN_EXPIRED'
+                );
+              }
+            }
           }
         }
 

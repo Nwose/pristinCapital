@@ -25,7 +25,7 @@ import {
   TokenResponse,
   FirstFactorTokenResponse,
 } from "./TokenManager";
-import { api, configureApiClient } from "../ApiClient";
+import { api, configureApiClient, isErrorWithCodeType } from "../ApiClient";
 import {
   UserType,
   LoginCredentialsType,
@@ -194,7 +194,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       }
     } catch (error) {
       console.error("[Auth] Initialization failed:", error);
-      handleLogout();
+      alert(error);
+      // handleLogout();
+      // if ({ message: "Request timeout", status: 408, code: "REQUEST_TIMEOUT", details: undefined })
+      if(isErrorWithCodeType(error)){
+        if (error?.code == "REQUEST_TIMEOUT"){
+        //  alert("Please check your internet");
+        }
+      }
     } finally {
       setLoading(false);
     }

@@ -6,7 +6,7 @@ import { BsFillBellFill } from "react-icons/bs";
 import { Menu, User } from "lucide-react";
 import Notification from "./Notification";
 import Customer from "./Customer";
-import { getCurrentUser } from "@/services/user.service";
+import { useAuth } from "@/lib/api/auth/authContext";
 import {
   getNotifications,
   NotificationType,
@@ -17,15 +17,9 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
 
-  const [user, setUser] = useState<{ first_name?: string; avatar?: string }>(
-    {}
-  );
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
-
-  useEffect(() => {
-    getCurrentUser().then(setUser).catch(console.error);
-  }, []);
 
   const openNotifications = async () => {
     if (loadingNotifications) return;
