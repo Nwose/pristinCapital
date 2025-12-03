@@ -3,7 +3,7 @@ export const baseURL = "";
 export const BackendRoutes = {
   /* ----------------------------- AUTH ----------------------------- */
   loginFirstFactor: `${baseURL}/login/token/1stfactor/`,
-  loginSecondFactor: `${baseURL}/login/token/2ndfactor/`,
+  loginSecondFactor: `${baseURL}/login/token/2stfactor/`,
   refreshToken: `${baseURL}/login/token/refresh/`,
 
   passwordReset: `${baseURL}/password_reset/`,

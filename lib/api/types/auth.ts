@@ -3,9 +3,22 @@ export interface UserType {
   id: string;
   username: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
-  avatar?: string;
+  phone_number: string;
+  first_name: string;
+  last_name: string;
+  tier: number;
+  is_email_verified: boolean;
+  is_phone_number_verified: boolean;
+  is_liveness_check_verified: boolean;
+  is_bvn_verified: boolean;
+  paystack_customer_verified: boolean;
+  paystack_dva_status: number;
+  paystack_dva_account_name: string;
+  paystack_dva_account_number: string;
+  paystack_dva_currency: string;
+  paystack_dva_bank_code: string;
+  paystack_dva_bank_name: string;
+  paystack_dva_bank_slug: string;
 }
 
 export interface LoginCredentialsType {
@@ -17,6 +30,7 @@ export interface RegisterDataType {
   username: string;
   email: string;
   password: string;
+  phone_number: string;
   firstName?: string;
   lastName?: string;
 }

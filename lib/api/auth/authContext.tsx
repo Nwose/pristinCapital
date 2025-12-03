@@ -32,14 +32,24 @@ import {
   RegisterDataType,
 } from "../types/auth";
 
-interface ApiErrorType {
+
+
+export interface ApiErrorType {
   message: string;
   status: number;
   code?: string;
   details?: unknown;
 }
 
-function isApiErrorType(error: unknown): error is ApiErrorType {
+export interface PartialUser {
+  email?: string;
+  is_email_verified?: boolean;
+  is_phone_verified?: boolean;
+  tfa_token?: string;
+  phone?: string;
+}
+
+export function isApiErrorType(error: unknown): error is ApiErrorType {
   return (
     typeof error === "object" &&
     error !== null &&
@@ -59,11 +69,14 @@ interface AuthState {
   user: UserType | null;
   isLoading: boolean;
   error: ApiErrorType | null;
+  partialUser: PartialUser | null;
 
   // Actions
   setUser: (user: UserType | null) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: ApiErrorType | null) => void;
+  setPartialUser: (partialUser: PartialUser | null) => void;
+  updatePartialUser: (partialUser: PartialUser) => void;
   clearError: () => void;
 }
 
@@ -74,17 +87,25 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isLoading: false,
       error: null,
+      partialUser: null,
 
       setUser: (user) => set({ user }),
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
       clearError: () => set({ error: null }),
+      setPartialUser: (partialUser) => set({ partialUser }),
+      updatePartialUser: (partialUser) => {
+        set((state) => ({
+          partialUser: { ...state.partialUser, ...partialUser },
+        }));
+      },
     }),
     {
       name: "auth-user-storage",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user, // Only persist user
+        partialUser: state.partialUser,
       }),
     }
   )
@@ -93,6 +114,7 @@ export const useAuthStore = create<AuthState>()(
 // Auth Context Type
 export interface AuthContextType {
   user: UserType | null;
+  partialUser: PartialUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: ApiErrorType | null;
@@ -129,6 +151,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const setLoading = useAuthStore((state) => state.setLoading);
   const setError = useAuthStore((state) => state.setError);
   const clearError = useAuthStore((state) => state.clearError);
+  const partialUser = useAuthStore((state) => state.partialUser);
+  const setPartialUser = useAuthStore((state) => state.setPartialUser);
+  const updatePartialUser = useAuthStore((state) => state.updatePartialUser);
 
   // Track if auth has been initialized
   const [initialized, setInitialized] = useState(false);
@@ -157,7 +182,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
    */
   const initializeAuth = async () => {
     setLoading(true);
-
+    
     try {
       if (authUtils.isAuthenticated()) {
         await fetchCurrentUser();
@@ -182,6 +207,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     try {
       const response = await api.get<UserType>(BackendRoutes.me);
       setUser(response.data);
+      updatePartialUser({
+        email: response.data.email,
+        phone: response.data.phone_number,
+        is_email_verified: response.data.is_email_verified,
+        is_phone_verified: response.data.is_phone_number_verified,
+      });
       setError(null);
     } catch (error) {
       console.error("[Auth] Failed to fetch user:", error);
@@ -201,6 +232,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const login = async (credentials: LoginCredentialsType): Promise<void> => {
     setLoading(true);
     setError(null);
+    updatePartialUser({
+      email: credentials.email,
+    });
 
     try {
       // Call login endpoint
@@ -214,6 +248,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       if (isFirstFactor(response.data)) {
         // save the tfa token and redirect to the 2FA page
         localStorage.setItem("tfa_token", response.data.tfa_token);
+        updatePartialUser({ tfa_token: response.data.tfa_token });
         router.push(Routes.loginSecondFactor);
         return;
       }
@@ -241,6 +276,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const register = async (data: RegisterDataType): Promise<void> => {
     setLoading(true);
     setError(null);
+    updatePartialUser({
+      email: data.email,
+      phone: data.phone_number,
+    });
 
     try {
       // Call registration endpoint
@@ -330,6 +369,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     refreshUser,
     fetchCurrentUser,
     clearError,
+    partialUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

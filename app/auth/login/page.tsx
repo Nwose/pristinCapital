@@ -4,7 +4,10 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/api/auth/authContext";
+import { authUtils, TokenResponse } from "@/lib/api/auth/TokenManager";
+import { toast as toastFn } from "react-toastify";
 import { Routes } from "@/lib/api/FrontendRoutes";
+import { FrontendRoutes } from "@/lib/api/FrontendRoutes";
 
 
 function isDetailsObject(details: unknown): details is { detail?: string; message?: string; error?: string } {
@@ -15,7 +18,7 @@ function isDetailsObject(details: unknown): details is { detail?: string; messag
 export default function Login() {
   const router = useRouter();
   const auth = useAuth();
-  const { login, isLoading, error, clearError } = auth;
+  const { login, isLoading, error, clearError, partialUser } = auth;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,8 +30,13 @@ export default function Login() {
   const [hasTfaToken, setHasTfaToken] = useState(false);
 
   useEffect(() => {
+    if (authUtils.isAuthenticated()){
+        toastFn.success("User is already logged in, redirecting to dashboard.");
+        router.push(FrontendRoutes.dashboard);
+    }
     const t = typeof window !== "undefined" ? localStorage.getItem("tfa_token") : null;
-    setHasTfaToken(Boolean(t));
+    const k = t && partialUser?.tfa_token === t;
+    setHasTfaToken(Boolean(k));
   }, []);
 
   // Clear context error when user edits inputs

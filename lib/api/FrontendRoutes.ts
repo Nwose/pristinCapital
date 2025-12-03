@@ -6,9 +6,11 @@ export const Routes = {
     login: "/auth/login",
     register: "/auth/sign-up",
     chats: "/tests/chats",
-    loginSecondFactor: "/auth/login/2stfactor",
+    loginSecondFactor: "/auth/login/2ndfactor",
     verifyEmailOTP: "/auth/verify-email",
     verifyPhoneOTP: "/auth/verify-phone",
     forgotPassword: "/auth/forgot-password",
     dashboard: "/dashboard",
 }
+
+export const FrontendRoutes = Routes;

@@ -35,3 +35,7 @@
 html {
   scroll-behavior: smooth;
 }
+
+a, button{
+  @apply cursor-pointer;
+}
