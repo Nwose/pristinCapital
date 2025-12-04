@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ToastContainer } from "react-toastify";
 import { AuthProviderClient } from "@/lib/api/auth/AuthProviderClient";
 import { BankProvider } from "@/lib/api/provider/BankProvider";
-import GlobalLoader from "@/components/GlobalLoader";
 import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
 
@@ -48,7 +47,6 @@ export default function RootLayout({
           draggable
           theme="colored" // 👈 gives nice visual feedback (green/red backgrounds)
         />
-        <GlobalLoader />
       </body>
     </html>
   );

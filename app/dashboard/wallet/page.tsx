@@ -20,6 +20,7 @@ import BankService, {
   BankAccountList,
   SuppportedBankList,
 } from "@/lib/api/services/Bank.Service";
+import { useAuth } from "@/lib/api/auth/authContext";
 import { toast } from "react-toastify";
 
 export default function WalletPage() {
@@ -32,6 +33,7 @@ export default function WalletPage() {
   const [amount, setAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
   // Modal state
   const [showAddBankModal, setShowAddBankModal] = useState(false);

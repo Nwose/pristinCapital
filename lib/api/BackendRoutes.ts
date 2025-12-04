@@ -64,6 +64,7 @@ export const BackendRoutes = {
 
   /* ----------------------------- WALLETS ----------------------------- */
   fundWallet: `${baseURL}/wallets/fund/`,
+  withdraw: `${baseURL}/wallets/withdraw/`,
   getUserWallets: `${baseURL}/wallets/get_user_wallets/`,
 
   /* ----------------------------- COMPLETE ----------------------------- */
