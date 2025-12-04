@@ -3,6 +3,7 @@
 import Sidebar from "../../components/dashboard/Sidebar";
 import Header from "../../components/dashboard/Header";
 import Notification from "../../components/dashboard/Notification";
+import KYCModal from "@/components/kyc/KYCModal";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/api/auth/authContext";
 import { authUtils, TokenResponse } from "@/lib/api/auth/TokenManager";
@@ -78,6 +79,7 @@ export default function DashboardLayout({
           onClick={() => setIsCollapsed(true)}
         />
       )}
+      <KYCModal />
     </>
   );
 }

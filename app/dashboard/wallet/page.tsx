@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AddBankModal from "@/components/banks/AddBankModal";
 import WalletService, { Wallet } from "@/lib/api/services/Wallet.Service";
 import BankService, { BankAccount, BankAccountList } from "@/lib/api/services/Bank.Service";
+import { FrontendRoutes } from "@/lib/api/FrontendRoutes";
 import { useAuth } from "@/lib/api/auth/authContext";
 import { toast } from "react-toastify";
 import { Check, Copy, AlertCircle, ArrowUpRight, ArrowDownLeft, ShieldAlert, Lock } from "lucide-react";
@@ -187,12 +189,12 @@ export default function WalletPage() {
           </div>
         </div>
 
-        <button
-          onClick={() => router.push("/dashboard/settings/verification")}
+        <Link
+          href={FrontendRoutes.finishKYC}
           className="bg-red-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-lg"
         >
           Complete Verification
-        </button>
+        </Link>
       </div>
     );
   };
@@ -212,13 +214,13 @@ export default function WalletPage() {
               )}
             </div>
             <div className="text-4xl font-bold mb-2">₦{formattedBalance}</div>
-            <button
-              onClick={() => router.push("/dashboard/wallet/transaction-history")}
+            <Link
+              href={FrontendRoutes.transactionHistory}
               className="text-sm text-white/90 hover:text-white flex items-center gap-1 mt-2"
             >
               View Transaction History
               <ArrowUpRight className="w-4 h-4" />
-            </button>
+            </Link>
           </div>
           <div className="flex gap-3 mt-6 md:mt-0">
             <button

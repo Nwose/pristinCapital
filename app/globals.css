@@ -39,3 +39,118 @@ html {
 a, button{
   @apply cursor-pointer;
 }
+
+
+
+/* ============================================
+   Add to globals.css
+   ============================================ */
+
+/* Floating animation keyframes - each with slightly different patterns */
+@keyframes float-1 {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(15px, -20px);
+  }
+  50% {
+    transform: translate(-10px, -15px);
+  }
+  75% {
+    transform: translate(-20px, 10px);
+  }
+}
+
+@keyframes float-2 {
+  0%, 100% {
+    transform: translate(-130%, -50%) translate(0, 0);
+  }
+  25% {
+    transform: translate(-130%, -50%) translate(-18px, 12px);
+  }
+  50% {
+    transform: translate(-130%, -50%) translate(8px, -22px);
+  }
+  75% {
+    transform: translate(-130%, -50%) translate(16px, 8px);
+  }
+}
+
+@keyframes float-3 {
+  0%, 100% {
+    transform: translate(-70%, -50%) translate(0, 0);
+  }
+  33% {
+    transform: translate(-70%, -50%) translate(12px, -15px);
+  }
+  66% {
+    transform: translate(-70%, -50%) translate(-15px, 10px);
+  }
+}
+
+@keyframes float-4 {
+  0%, 100% {
+    transform: translate(-10%, -50%) translate(0, 0);
+  }
+  30% {
+    transform: translate(-10%, -50%) translate(-14px, 18px);
+  }
+  60% {
+    transform: translate(-10%, -50%) translate(10px, -12px);
+  }
+}
+
+@keyframes float-5 {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(20px, -8px);
+  }
+  66% {
+    transform: translate(-12px, 6px);
+  }
+}
+
+@keyframes float-6 {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  40% {
+    transform: translate(-18px, 14px);
+  }
+  80% {
+    transform: translate(8px, -10px);
+  }
+}
+
+/* Animation classes with different durations and delays */
+.animate-float-1 {
+  animation: float-1 8s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: float-2 10s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+.animate-float-3 {
+  animation: float-3 12s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.animate-float-4 {
+  animation: float-4 9s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+.animate-float-5 {
+  animation: float-5 11s ease-in-out infinite;
+  animation-delay: 0.8s;
+}
+
+.animate-float-6 {
+  animation: float-6 13s ease-in-out infinite;
+  animation-delay: 2s;
+}

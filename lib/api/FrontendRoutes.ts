@@ -11,6 +11,13 @@ export const Routes = {
     verifyPhoneOTP: "/auth/verify-phone",
     forgotPassword: "/auth/forgot-password",
     dashboard: "/dashboard",
+    wallet: "/dashboard/wallet",
+    transactionHistory: "/dashboard/wallet/transaction-history",
+    investments: "/dashboard/investments",
+    loans: "/dashboard/loans",
+    payments: "/dashboard/payments",
+    settings: "/dashboard/settings",
+    finishKYC: "/dashboard/settings/finish-kyc",
 }
 
 export const FrontendRoutes = Routes;

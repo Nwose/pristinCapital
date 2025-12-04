@@ -6,28 +6,33 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, LogOut, ArrowUp } from "lucide-react";
 import { useAuth } from "@/lib/api/auth/authContext";
+import { FrontendRoutes } from "@/lib/api/FrontendRoutes";
 
 const navigationItems = [
   { name: "Overview", href: "/dashboard", icon: "/images/icons/ov.svg" },
   {
     name: "Wallet",
-    href: "/dashboard/wallet",
+    href: FrontendRoutes.wallet,
     icon: "/images/icons/Vector.svg",
   },
   {
     name: "Investments",
-    href: "/dashboard/investments",
+    href: FrontendRoutes.investments,
     icon: "/images/icons/investments.svg",
   },
-  { name: "Loans", href: "/dashboard/loans", icon: "/images/icons/loans.svg" },
+  {
+    name: "Loans",
+    href: FrontendRoutes.loans,
+    icon: "/images/icons/loans.svg"
+  },
   {
     name: "Payments",
-    href: "/dashboard/payments",
+    href: FrontendRoutes.payments,
     icon: "/images/icons/payments.svg",
   },
   {
     name: "Settings",
-    href: "/dashboard/settings",
+    href: FrontendRoutes.settings,
     icon: "/images/icons/settings.svg",
   },
 ];
@@ -44,9 +49,8 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   return (
     <div className="relative h-full">
       <div
-        className={`${
-          isCollapsed ? "w-20 md:w-[165px] xl:w-[200px]" : "w-64 xl:w-[272px]"
-        } bg-[#1e293b] text-white flex flex-col transition-all duration-300 ease-in-out h-full pb-12`}
+        className={`${isCollapsed ? "w-20 md:w-[165px] xl:w-[200px]" : "w-64 xl:w-[272px]"
+          } bg-[#1e293b] text-white flex flex-col transition-all duration-300 ease-in-out h-full pb-12`}
       >
         <button
           onClick={onToggle}
@@ -73,13 +77,11 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 <li key={item.name}>
                   <Link
                     href={item.href}
-                    className={`flex items-center ${
-                      isCollapsed ? "justify-center px-2" : "px-4"
-                    } py-3 text-sm font-medium rounded-sm transition-all duration-200 ${
-                      isActive
+                    className={`flex items-center ${isCollapsed ? "justify-center px-2" : "px-4"
+                      } py-3 text-sm font-medium rounded-sm transition-all duration-200 ${isActive
                         ? "bg-[#CCEAE933] text-white shadow-lg border-r-[5px] border-[#019893]"
                         : "text-gray-300 hover:bg-slate-700 hover:text-white"
-                    }`}
+                      }`}
                     title={isCollapsed ? item.name : undefined}
                   >
                     {isActive && !isCollapsed && (
@@ -91,17 +93,16 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                         alt={item.name}
                         width={16}
                         height={16}
-                        className={`object-contain${
-                          isActive
-                            ? " [filter:brightness(0)_saturate(100%)_invert(48%)_sepia(97%)_saturate(749%)_hue-rotate(134deg)_brightness(97%)_contrast(101%)]"
-                            : ""
-                        }`}
+                        className={`object-contain${isActive
+                          ? " [filter:brightness(0)_saturate(100%)_invert(48%)_sepia(97%)_saturate(749%)_hue-rotate(134deg)_brightness(97%)_contrast(101%)]"
+                          : ""
+                          }`}
                         style={
                           isActive
                             ? {
-                                filter:
-                                  "brightness(0) saturate(100%) invert(48%) sepia(97%) saturate(749%) hue-rotate(134deg) brightness(97%) contrast(101%)",
-                              }
+                              filter:
+                                "brightness(0) saturate(100%) invert(48%) sepia(97%) saturate(749%) hue-rotate(134deg) brightness(97%) contrast(101%)",
+                            }
                             : undefined
                         }
                       />
@@ -121,9 +122,8 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         {/* User Profile Section */}
         <div className="p-4 mt-auto">
           <div
-            className={`flex flex-col items-center mb-6 ${
-              isCollapsed ? "justify-center" : ""
-            }`}
+            className={`flex flex-col items-center mb-6 ${isCollapsed ? "justify-center" : ""
+              }`}
           >
             <div className="w-[62px] h-[62px] rounded-full overflow-hidden flex justify-center items-center">
               <Image
@@ -136,7 +136,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             </div>
 
             <div className="text-center">
-              <p className="text-white font-medium">{user?.first_name}</p>
+              <p className="text-white font-medium">{user?.first_name} {user?.last_name}</p>
               <p className="text-gray-400 text-sm">Tier: {user?.tier}</p>
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           )}
 
           {/* Collapsed Upgrade Button */}
-          {isCollapsed && (
+          {(isCollapsed && user?.tier === 3 && user.is_bvn_verified) && (
             <div className="mb-4 flex justify-center">
               <button
                 className="w-12 h-12 relative focus:outline-none"
@@ -185,10 +185,9 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           {/* Logout Button */}
           <div className="mb-0 flex justify-center">
             <button
-              className={`${
-                isCollapsed ? "bg-transparent" : "w-full"
-              } bg-[#374151] text-white py-3 px-4 rounded-lg flex items-center justify-center font-medium hover:bg-[#4b5563] transition-colors`}
-              onClick={()=>{
+              className={`${isCollapsed ? "bg-transparent" : "w-full"
+                } bg-[#374151] text-white py-3 px-4 rounded-lg flex items-center justify-center font-medium hover:bg-[#4b5563] transition-colors`}
+              onClick={() => {
                 logout();
               }}
             >
