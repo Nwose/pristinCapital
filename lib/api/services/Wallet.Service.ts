@@ -39,8 +39,9 @@ class WalletService {
     return wallets.find(w => w.wallet_type === "main");
   }
 
-  static async withdraw(): Promise<WithdrawOut> {
-    const res = await apiClient.post<WithdrawOut>(BackendRoutes.withdraw, {}, {
+  static async withdraw(withdrawIn: WithdrawIn): Promise<WithdrawOut> {
+    console.log("WITHDRAWING: ", withdrawIn);
+    const res = await apiClient.post<WithdrawOut>(BackendRoutes.withdraw, withdrawIn, {
       requiresAuth: true
     })
     return res.data;
