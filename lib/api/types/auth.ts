@@ -19,6 +19,7 @@ export interface UserType {
   paystack_dva_bank_code: string;
   paystack_dva_bank_name: string;
   paystack_dva_bank_slug: string;
+  avatar?: string;
 }
 
 export interface LoginCredentialsType {

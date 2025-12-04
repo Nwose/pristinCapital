@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, LogOut, ArrowUp } from "lucide-react";
+import { useAuth } from "@/lib/api/auth/authContext";
 
 const navigationItems = [
   { name: "Overview", href: "/dashboard", icon: "/images/icons/ov.svg" },
@@ -38,6 +39,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   return (
     <div className="relative h-full">
@@ -125,7 +127,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           >
             <div className="w-[62px] h-[62px] rounded-full overflow-hidden flex justify-center items-center">
               <Image
-                src="/images/profile.jpg" // Replace with actual avatar path
+                src={user?.avatar || "/default_user.webp"}
                 alt="Samuel"
                 width={62}
                 height={62}
@@ -134,8 +136,8 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             </div>
 
             <div className="text-center">
-              <p className="text-white font-medium">Samuel</p>
-              <p className="text-gray-400 text-sm">Tier: 1</p>
+              <p className="text-white font-medium">{user?.first_name}</p>
+              <p className="text-gray-400 text-sm">Tier: {user?.tier}</p>
             </div>
           </div>
 
@@ -186,6 +188,9 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               className={`${
                 isCollapsed ? "bg-transparent" : "w-full"
               } bg-[#374151] text-white py-3 px-4 rounded-lg flex items-center justify-center font-medium hover:bg-[#4b5563] transition-colors`}
+              onClick={()=>{
+                logout();
+              }}
             >
               <LogOut
                 className={isCollapsed ? "text-[20px]" : "text-[16px] mr-2"}
