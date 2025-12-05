@@ -1,15 +1,11 @@
 import { apiClient } from "../ApiClient";
+import { UserType } from "../types/auth";
 import { BackendRoutes } from "../BackendRoutes";
-
+import { useAuthStore } from "../auth/authContext";
 
 export interface LivenessCheckIn {
 // nothing for now
 }
-
-export interface LivenessCheckOut {
-// nothing for now
-}
-
 
 export interface VerifyCustomerIn {
     bvn: string;
@@ -17,20 +13,17 @@ export interface VerifyCustomerIn {
     account_number: string;
 }
 
-export interface VerifyCustomerOut {
-}
-
 
 class KYCService {
-    static async verifyCustomer(verifyCustomerIn: VerifyCustomerIn): Promise<VerifyCustomerOut> {
-        const res = await apiClient.post<VerifyCustomerOut>(BackendRoutes.doKycCheck, verifyCustomerIn, {
+    static async verifyCustomer(verifyCustomerIn: VerifyCustomerIn): Promise<UserType> {
+        const res = await apiClient.post<UserType>(BackendRoutes.doKycCheck, verifyCustomerIn, {
             requiresAuth: true,
         });
         
         return res.data;
     }
-    static async livenessCheck(livenessCheckIn: LivenessCheckIn): Promise<LivenessCheckOut> {
-        const res = await apiClient.post<LivenessCheckOut>(BackendRoutes.doLivenessCheck, livenessCheckIn, {
+    static async livenessCheck(livenessCheckIn: LivenessCheckIn): Promise<UserType> {
+        const res = await apiClient.post<UserType>(BackendRoutes.doLivenessCheck, livenessCheckIn, {
             requiresAuth: true,
         });
         

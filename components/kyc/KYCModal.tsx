@@ -125,8 +125,8 @@ export default function KYCModal({ onSuccess, onClose }: KYCModalProps) {
                 <div className="absolute inset-0 z-65" />
 
                 {/* Modal Content */}
-                <div className="z-70 fixed inset-0 overflow-y-auto overflow-x-hidden py-5">
-                    <div className="z-70 relative bg-[#012638] border border-[#019893]/30 max-w-[520px] rounded-2xl shadow-2xl w-[90%] p-8 mx-auto">
+                <div className="z-70 fixed inset-0 overflow-y-auto overflow-x-hidden py-5 flex">
+                    <div className="z-70 relative bg-[#012638] border border-[#019893]/30 max-w-[520px] rounded-2xl shadow-2xl w-[90%] p-8 m-auto">
                         {/* Close Button (optional) */}
                         {onClose && (
                             <button

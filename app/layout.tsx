@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ToastContainer } from "react-toastify";
 import { AuthProviderClient } from "@/lib/api/auth/AuthProviderClient";
 import { BankProvider } from "@/lib/api/provider/BankProvider";
+import { TierUpgradeProvider } from "@/lib/api/contexts/TierUpgradeContext";
+import UpdateTierModal from "@/components/kyc/UpdateTierModal";
 import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
 
@@ -31,7 +33,10 @@ export default function RootLayout({
       <body className={`${geist.variable} ${geistMono.variable} antialiased`}>
         <AuthProviderClient>
           <BankProvider>
-            {children}
+            <TierUpgradeProvider>
+              {children}
+              <UpdateTierModal />
+            </TierUpgradeProvider>
           </BankProvider>
         </AuthProviderClient>
 

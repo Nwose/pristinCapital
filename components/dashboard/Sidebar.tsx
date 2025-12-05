@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, LogOut, ArrowUp } from "lucide-react";
 import { useAuth } from "@/lib/api/auth/authContext";
+import { useTierUpgrade } from "@/lib/api/contexts/TierUpgradeContext";
 import { FrontendRoutes } from "@/lib/api/FrontendRoutes";
 
 const navigationItems = [
@@ -45,6 +46,9 @@ interface SidebarProps {
 export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { openTierUpgrade } = useTierUpgrade();
+
+  const needsVerification = !user?.is_bvn_verified || !user?.is_liveness_check_verified;
 
   return (
     <div className="relative h-full">
@@ -142,7 +146,7 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           </div>
 
           {/* Upgrade Button */}
-          {!isCollapsed && (
+          {(!isCollapsed && needsVerification) && (
             <div className="relative mb-6">
               <span className="absolute -top-3 left-0 rounded-r-lg rounded-tl-lg bg-yellow-500 text-[#FD2828] text-xs px-2 py-1 font-medium z-10">
                 <span className="bg-red-500 text-white px-1 rounded text-xs">
@@ -150,7 +154,10 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 </span>{" "}
                 Please Upgrade
               </span>
-              <button className="w-full bg-[#10b981] text-white py-3 px-4 rounded-lg flex items-center justify-center font-medium hover:bg-[#059669] transition-colors">
+              <button 
+                className="w-full bg-[#10b981] text-white py-3 px-4 rounded-lg flex items-center justify-center font-medium hover:bg-[#059669] transition-colors"
+                onClick={openTierUpgrade}
+              >
                 <ArrowUp className="mr-2 text-[16px]" />
                 Upgrade Tier
               </button>
@@ -158,11 +165,12 @@ export default function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           )}
 
           {/* Collapsed Upgrade Button */}
-          {(isCollapsed && user?.tier === 3 && user.is_bvn_verified) && (
+          {(isCollapsed && needsVerification) && (
             <div className="mb-4 flex justify-center">
               <button
                 className="w-12 h-12 relative focus:outline-none"
                 title="Upgrade Tier"
+                onClick={openTierUpgrade}
               >
                 {/* Ochre box */}
                 <div className="w-5 h-5 bg-[#CFA32A] rounded-lg absolute top-0 left-0 z-10 flex items-center justify-center shadow-md">
