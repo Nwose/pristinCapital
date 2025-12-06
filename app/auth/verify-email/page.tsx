@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { api, ApiError } from "@/lib/api/ApiClient";
 import { useAuth } from "@/lib/api/auth/authContext";
 import { authUtils } from "@/lib/api/auth/TokenManager";
 import { FrontendRoutes } from "@/lib/api/FrontendRoutes";
@@ -91,14 +92,14 @@ export default function VerifyEmail() {
           message: result.detail || "Verification code sent successfully!",
         },
       };
-    } catch (error: any) {
-      console.error("Error resending OTP:", error);
+    } catch (err: any) {
+      console.error("Error resending OTP:", err);
+      const error = err as ApiError;
       return {
         ok: false,
         data: {
           message:
-            error?.response?.data?.detail ||
-            error?.response?.data?.message ||
+            error.message ||
             "Failed to resend code. Please try again.",
         },
       };

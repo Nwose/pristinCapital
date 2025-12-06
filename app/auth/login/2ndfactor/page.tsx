@@ -23,7 +23,7 @@ export default function SecondFactorOTPPage() {
   const login2FA = BackendRoutes.loginSecondFactor;
   
   // Zustand store hooks
-  const { partialUser, fetchCurrentUser } = useAuth();
+  const { partialUser, fetchCurrentUser, updatePartialUser } = useAuth();
 
   useEffect(() => {
     // Get email from Zustand store
@@ -62,6 +62,9 @@ export default function SecondFactorOTPPage() {
       const error: ApiError = err as ApiError;
       if ( error.message.includes("expired tfa token")){
         // delete tfa code
+        toastFn.error("Your session has expired. Please log in again.");
+        updatePartialUser({ tfa_token: undefined } as PartialUser);
+        router.push(FrontendRoutes.login);
       }
       return { ok: false, data: error.message };
     }

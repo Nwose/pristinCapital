@@ -336,8 +336,9 @@ class ApiClient {
       const contentType = response.headers.get('content-type');
       if (contentType?.includes('application/json')) {
         errorDetails = await response.json();
-        errorMessage = (errorDetails as { message?: string; detail?: string }).message 
-          || (errorDetails as { message?: string; detail?: string }).detail 
+        errorMessage = (errorDetails as { message?: string; detail?: string, error?: string }).message 
+          || (errorDetails as { message?: string; detail?: string, error?: string }).detail 
+          || (errorDetails as { message?: string; detail?: string, error?: string }).error
           || errorMessage;
       } else {
         errorMessage = await response.text() || errorMessage;
