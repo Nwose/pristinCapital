@@ -121,7 +121,7 @@ export default function VerifyEmail() {
       // Update partial user to mark email as verified
       updatePartialUser({ is_email_verified: true });
 
-      // Check if phone verification is needed
+      // Check if phone verification is needed based on the response
       if (result.need_phone_verification) {
         // Navigate to phone verification after a short delay
         setTimeout(() => {
@@ -135,7 +135,7 @@ export default function VerifyEmail() {
           },
         };
       } else {
-        // Navigate to login after a short delay
+        // No phone verification needed, go to login
         setTimeout(() => {
           router.push(FrontendRoutes.login);
         }, 1500);
@@ -149,13 +149,12 @@ export default function VerifyEmail() {
       }
     } catch (error: any) {
       console.error("Error verifying OTP:", error);
+      const err = error as ApiError;
       return {
         ok: false,
         data: {
           message:
-            error?.response?.data?.detail ||
-            error?.response?.data?.message ||
-            error?.message ||
+            err.message ||
             "Invalid verification code. Please try again.",
         },
       };
@@ -393,7 +392,7 @@ export default function VerifyEmail() {
                   isModalSubmitting
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg hover:shadow-xl"
-                }`}
+                  }`}
               >
                 {isModalSubmitting ? (
                   <span className="inline-flex items-center gap-2">
