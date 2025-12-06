@@ -163,6 +163,8 @@ export default function SignUp() {
       return;
     }
 
+    updatePartialUser({ email: email.trim(), phone: phoneNumber });
+
     setLoading(true);
 
     try {
@@ -674,6 +676,10 @@ export default function SignUp() {
                   >
                     Log in
                   </Link>
+                </p>
+                <p className="text-center text-gray-400 text-sm mt-4">
+                  <Link href={FrontendRoutes.verifyEmailOTP} className="text-teal-600 cursor-pointer hover:underline font-semibold transition-colors"> Verify Email </Link> | 
+                  <Link href={FrontendRoutes.verifyPhoneOTP} className="text-teal-600 cursor-pointer hover:underline font-semibold transition-colors"> Verify Phone </Link>
                 </p>
               </form>
             </div>

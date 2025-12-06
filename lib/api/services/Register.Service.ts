@@ -60,7 +60,7 @@ interface EmailVerifyOTPOut {
 interface PhoneVerifyOTPOut {
     detail: string;
     code: "otp_verified" | string;
-    need_bvn_verification: boolean;
+    need_email_verification: boolean;
 }
 
 

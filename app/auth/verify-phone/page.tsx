@@ -1,221 +1,187 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import * as auth from "@/services/auth";
-import { toast } from 'react-toastify';
-
-const TIME_BEFORE_RESEND = 45; // seconds
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+import { api, ApiError } from "@/lib/api/ApiClient";
+import { useAuth } from "@/lib/api/auth/authContext";
+import { authUtils } from "@/lib/api/auth/TokenManager";
+import { FrontendRoutes } from "@/lib/api/FrontendRoutes";
+import RegisterService from "@/lib/api/services/Register.Service";
+import OtpVerifier, { OtpResult } from "@/components/auth/OTPVerifier";
+import { X } from "lucide-react";
 
 export default function VerifyPhone() {
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [timeLeft, setTimeLeft] = useState(TIME_BEFORE_RESEND);
-  const [isExpired, setIsExpired] = useState(false);
-  const [currentInputIndex, setCurrentInputIndex] = useState(0);
-  const [isError, setIsError] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const [phone, setPhone] = useState<string | null>(null);
   const router = useRouter();
-  let hasSentInitialOTP = false;
+  const { user, isAuthenticated, partialUser, updatePartialUser } = useAuth();
+  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [modalPhone, setModalPhone] = useState<string>("");
+  const [modalError, setModalError] = useState("");
+  const [isModalSubmitting, setIsModalSubmitting] = useState(false);
 
-  // get phone from signup (client-only)
+  // Redirect if already authenticated
   useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        const stored = window.localStorage.getItem("last_registration_user");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          // console.log("last_registration_user bro", parsed);
-          setPhone(parsed?.phone_number ?? null);
-        }
-      }
-    } catch (e) {
-      console.warn("Failed to read last_registration_user from localStorage", e);
-      setPhone(null);
+    if (user && authUtils.isAuthenticated()) {
+      router.push(FrontendRoutes.dashboard);
     }
-    if (!hasSentInitialOTP) {
-      handleResendCode();
-      hasSentInitialOTP = true;
-    }
-  }, []);
+  }, [user, router, isAuthenticated]);
 
+  // Check if we have phone number, if not show modal
   useEffect(() => {
-    if (timeLeft > 0 && !isSuccess) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (timeLeft === 0) {
-      setIsExpired(true);
+    if (!partialUser?.phone) {
+      setShowPhoneModal(true);
+    } else {
+      setPhoneNumber(partialUser.phone);
+      setShowPhoneModal(false);
     }
-  }, [timeLeft, isSuccess]);
+  }, [partialUser]);
 
-  const handleOtpChange = (index: number, value: string) => {
-    if (value.length <= 1 && /^\d*$/.test(value)) {
-      const newOtp = [...otp];
-      newOtp[index] = value;
-      setOtp(newOtp);
-      setIsError(false);
-
-      if (value && index < 5) {
-        setCurrentInputIndex(index + 1);
-        inputRefs.current[index + 1]?.focus();
-      } else if (!value && index > 0) {
-        setCurrentInputIndex(index - 1);
-      } else {
-        setCurrentInputIndex(index);
-      }
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      setCurrentInputIndex(index - 1);
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleFocus = (index: number) => {
-    setCurrentInputIndex(index);
-  };
-
-  const isOtpComplete = otp.every((digit) => digit !== "");
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePhoneModalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isOtpComplete && !isExpired && !isSubmitting) {
-      setIsSubmitting(true);
+    setModalError("");
 
-      const otpCode = otp.join("");
+    // Validate phone number (should be in E.164 format)
+    if (!modalPhone || modalPhone.length < 10) {
+      setModalError("Please enter a valid phone number");
+      return;
+    }
 
-      try {
-        const res = await auth.verifyPhoneOTP(phone || "", otpCode);
+    setIsModalSubmitting(true);
 
-        let data: any = {};
-        try {
-          data = await res.json();
-        } catch {
-          console.warn("No JSON response from server");
-        }
+    try {
+      // Send OTP to the provided phone number
+      await RegisterService.sendPhoneOTP({ phone_number: modalPhone.trim() });
 
-        if (res.ok) {
-          setIsSuccess(true);
-          const needs_email_verification = data.need_email_verification;
-          if (needs_email_verification) {
-            console.log("User needs email verification, proceeding to email verification page");
-            toast.success('Your phone number has been verified. Please verify your email.');
-            setTimeout(
-              () => router.push("/verify-email"),
-              3000
-            );
-          } else {
-            toast.success('Your phone number has been verified.');
-            setTimeout(
-              () => router.push("/login"),
-              3000
-            );
-          }
-        } else {
-          setIsError(true);
-          setIsSubmitting(false);
-          console.warn("Phone verification failed:", data);
-        }
-      } catch (err) {
-        console.error("Phone verification error:", err);
-        setIsError(true);
-        setIsSubmitting(false);
-      }
+      // Update partial user with the phone number
+      updatePartialUser({ phone: modalPhone.trim() });
+
+      // Close modal
+      setShowPhoneModal(false);
+      setModalError("");
+    } catch (error: any) {
+      console.error("Error sending phone OTP:", error);
+      const errorMessage =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to send verification code. Please try again.";
+      setModalError(errorMessage);
+    } finally {
+      setIsModalSubmitting(false);
     }
   };
 
-  const handleContinue = () => {
-    console.log("Navigating to dashboard...");
-    window.location.href = "/dashboard"; // ✅ after phone verification, go to dashboard
-  };
-
-  const handleResendCode = async () => {
-    setTimeLeft(59);
-    setIsExpired(false);
-    setOtp(["", "", "", "", "", ""]);
-    setIsError(false);
-    setCurrentInputIndex(0);
-    inputRefs.current[0]?.focus();
-
-    const last_registration_user = window.localStorage.getItem("last_registration_user");
-    const parsed = last_registration_user ? JSON.parse(last_registration_user) : null;
-
-    const phone_to_send = phone || parsed?.phone_number || "";
+  const handleResendOTP = async (): Promise<OtpResult> => {
+    if (!partialUser?.phone) {
+      setShowPhoneModal(true);
+      return { ok: false, data: { message: "Phone number is required" } };
+    }
 
     try {
-      const res = await auth.sendPhoneOTP(phone_to_send);
-      const data = await res.json();
-      if (res.ok) {
-        console.log("Resend phone OTP success");
+      const result = await RegisterService.sendPhoneOTP({
+        phone_number: partialUser.phone,
+      });
+
+      return {
+        ok: true,
+        data: {
+          message: result.detail || "Verification code sent successfully!",
+        },
+      };
+    } catch (err: any) {
+      console.error("Error resending OTP:", err);
+      const error = err as ApiError;
+      return {
+        ok: false,
+        data: {
+          message:
+            error.message || "Failed to resend code. Please try again.",
+        },
+      };
+    }
+  };
+
+  const handleSubmitOTP = async (code: string): Promise<OtpResult> => {
+    if (!partialUser?.phone) {
+      setShowPhoneModal(true);
+      return { ok: false, data: { message: "Phone number is required" } };
+    }
+
+    try {
+      const result = await RegisterService.verifyPhoneOTP({
+        phone_number: partialUser.phone,
+        otp: code,
+      });
+
+      // Update partial user to mark phone as verified
+      updatePartialUser({ is_phone_verified: true });
+
+      // Check if email verification is needed based on the response
+      if (result.need_email_verification) {
+        // Navigate to email verification after a short delay
+        setTimeout(() => {
+          router.push(FrontendRoutes.verifyEmailOTP);
+        }, 1500);
+
+        return {
+          ok: true,
+          data: {
+            message: "Phone verified! Redirecting to email verification...",
+          },
+        };
       } else {
-        console.error("Resend phone OTP failed:", data);
-        if (data.error && data.error.includes("already verified")) {
-          console.error("Resend Failed because phone number is already verified");
+        // No email verification needed, go to login
+        setTimeout(() => {
+          router.push(FrontendRoutes.login);
+        }, 1500);
 
-          if (!last_registration_user) {
-            toast.success('Your phone number has already been verified.');
-            setTimeout(
-              () => router.push("/login"),
-              3000
-            );
-          }
-
-          if (last_registration_user) {
-            parsed.is_phone_number_verified = true;
-            window.localStorage.setItem("last_registration_user", JSON.stringify(parsed));
-
-            const is_email_verified = parsed.is_email_verified;
-            if (!is_email_verified) {
-              console.log("User needs email verification, proceeding to email verification page");
-              toast.success('Your phone number has already been verified. Please verify your email.');
-              setTimeout(
-                () => router.push("/verify-email"),
-                3000
-              );
-            } else {
-              toast.success('Your phone number has already been verified.');
-              setTimeout(
-                () => router.push("/login"),
-                3000
-              );
-            }
-          } else {
-            toast.success('Your phone number has already been verified.');
-            setTimeout(
-              () => router.push("/login"),
-              3000
-            );
-          }
-        } else {
-          console.error("Resend Failed for some other reason");
-        }
+        return {
+          ok: true,
+          data: {
+            message: "Phone verified successfully! Redirecting to login...",
+          },
+        };
       }
-    } catch (err) {
-      console.error("Resend phone OTP error:", err);
+    } catch (error: any) {
+      console.error("Error verifying OTP:", error);
+      const err = error as ApiError;
+      return {
+        ok: false,
+        data: {
+          message:
+            err.message || "Invalid verification code. Please try again.",
+        },
+      };
     }
   };
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      {/* Left Hero Section */}
+      {/* Left side - Hero section */}
       <div className="hidden lg:flex lg:w-1/3 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/images/loginImage.png')] bg-cover bg-center">
-          <div className="absolute inset-0 bg-gradient-to-b from-white via-white/30 to-[#012638]"></div>
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/images/loginImage.png')" }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.3) 10%, #012638 100%)",
+            }}
+          ></div>
         </div>
-
         <div className="relative z-20 flex flex-col justify-between pt-[12px] text-white w-full">
           <div className="flex items-center justify-center">
             <Image
               src="/images/logo_1.png"
               alt="Pristin Capital Logo"
               width={200}
-              height={90}
+              height={60}
               className="max-w-xs"
               priority
             />
@@ -233,193 +199,280 @@ export default function VerifyPhone() {
         </div>
       </div>
 
-      {/* Right Section */}
+      {/* Right side - Verification form */}
       <div className="w-full lg:w-2/3 flex flex-col bg-gray-50">
+        {/* Header */}
         <div className="flex justify-between lg:justify-end items-center p-4 lg:p-6 space-x-4 lg:space-x-8 bg-white shadow-sm">
           <div className="lg:hidden flex items-center">
-            <div className="rounded-sm flex items-center justify-center">
-              <Image
-                src="/images/logo_1.png"
-                alt="Pristin Capital Logo"
-                width={100}
-                height={30}
-                className="max-w-xs"
-                priority
-              />
-            </div>
+            <Image
+              src="/images/logo_1.png"
+              alt="Pristin Capital Logo"
+              width={100}
+              height={30}
+              className="max-w-xs"
+              priority
+            />
           </div>
           <div className="flex space-x-4 lg:space-x-8">
-            <button className="text-gray-600 hover:text-teal-600 font-medium text-sm lg:text-base">
+            <button className="text-gray-600 hover:text-teal-600 font-medium text-sm lg:text-base transition-colors">
               About
             </button>
-            <button className="text-gray-600 hover:text-teal-600 font-medium text-sm lg:text-base">
+            <button className="text-gray-600 hover:text-teal-600 font-medium text-sm lg:text-base transition-colors">
               Help
             </button>
           </div>
         </div>
 
+        {/* Main content */}
         <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-4 sm:py-8">
           <div className="w-full max-w-lg">
             <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 lg:p-12 border border-gray-100">
-              {!isSuccess ? (
-                <>
-                  <div className="flex justify-center mb-8">
-                    <Image
-                      src="/images/email_icon.png"
-                      alt="Phone verification icon"
-                      width={80}
-                      height={80}
-                      className="w-20 h-20"
-                    />
-                  </div>
-
-                  <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-4 sm:mb-6">
-                    Verify Your Phone Number
-                  </h2>
-
-                  <p className="text-center text-teal-600 mb-8 lg:mb-10 leading-relaxed text-sm sm:text-base px-2">
-                    We've sent a 6-digit verification code to your phone number.
-                    Please check your SMS inbox and enter the code below to
-                    continue.
-                  </p>
-
-                  <form
-                    className="space-y-6 lg:space-y-8"
-                    onSubmit={handleSubmit}
-                  >
-                    <div>
-                      <label className="block text-sm sm:text-base font-medium text-gray-700 mb-4 sm:mb-6 text-center">
-                        Enter OTP
-                      </label>
-                      <div className="flex justify-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
-                        {otp.map((digit, index) => (
-                          <input
-                            key={index}
-                            ref={(el) => {
-                              inputRefs.current[index] = el;
-                            }}
-                            type="text"
-                            value={digit}
-                            onChange={(e) =>
-                              handleOtpChange(index, e.target.value)
-                            }
-                            onKeyDown={(e) => handleKeyDown(index, e)}
-                            onFocus={() => handleFocus(index)}
-                            aria-label={`Phone OTP digit ${index + 1}`}
-                            inputMode="numeric"
-                            autoComplete="one-time-code"
-                            className={`w-10 h-12 sm:w-14 sm:h-14 border-2 rounded-lg text-center text-lg sm:text-xl font-semibold text-gray-700 focus:outline-none transition-all ${isError
-                              ? "border-red-500 bg-red-50"
-                              : currentInputIndex === index
-                                ? "border-white bg-white shadow-lg ring-2 ring-teal-200"
-                                : "border-teal-200 bg-teal-50 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-                              }`}
-                            maxLength={1}
-                          />
-                        ))}
-                      </div>
-
-                      {isError && (
-                        <p className="text-center text-red-500 font-medium mb-4">
-                          Incorrect OTP
-                        </p>
-                      )}
-
-                      {
-                        timeLeft > 0 && (
-                          <p className="text-center text-gray-600 mb-8">
-                            OTP expires in{" "}
-                            <span
-                              className={`font-semibold ${timeLeft <= 10 ? "text-red-500" : "text-teal-600"
-                                }`}
-                            >
-                              {timeLeft}
-                            </span>{" "}
-                            seconds
-                          </p>
-                        )
-                      }
-
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={!isOtpComplete || isExpired || isSubmitting}
-                      className={`w-full py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg shadow-lg ${isOtpComplete && !isExpired && !isSubmitting
-                        ? "bg-slate-800 hover:bg-slate-900 text-white cursor-pointer"
-                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        }`}
-                    >
-                      {isSubmitting ? "Verifying..." : "Confirm"}
-                    </button>
-
-                    <div className="text-center text-gray-400 font-medium text-sm sm:text-base">
-                      or
-                    </div>
-
-                    <div className="text-center space-y-3">
-                      {isExpired && (
-                        <button
-                          type="button"
-                          onClick={handleResendCode}
-                          className="text-teal-600 hover:underline font-semibold block w-full text-sm sm:text-base"
-                        >
-                          Resend Code
-                        </button>
-                      )}
-
-                      <p className="text-gray-600 text-sm sm:text-base">
-                        Already have an account?{" "}
-                        <span className="text-teal-600 hover:underline font-semibold">
-                          Log in
-                        </span>
-                      </p>
-                    </div>
-                    <div className="text-center space-y-3">
-                      <Link
-                        href="/verify-email"
-                        className="text-teal-600 hover:underline font-semibold"
-                      >
-                        Verify Email
-                      </Link>
-                    </div>
-                  </form>
-                </>
+              {partialUser?.phone && !showPhoneModal ? (
+                <OtpVerifier
+                  length={6}
+                  initialTarget={phoneNumber}
+                  timeBeforeResend={59}
+                  autoSendOnMount={true}
+                  onSubmit={handleSubmitOTP}
+                  onResend={handleResendOTP}
+                  heading="Verify Your Phone Number"
+                  description="We've sent a 6-digit verification code to"
+                  className="w-full"
+                />
               ) : (
-                <div className="text-center">
-                  <div className="flex justify-center mb-8">
-                    <Image
-                      src="/images/contact_icon.png"
-                      alt="Success checkmark"
-                      width={80}
-                      height={80}
-                      className="w-20 h-20"
-                    />
+                <div className="text-center py-8">
+                  <div className="animate-pulse">
+                    <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-green-600 mb-4 sm:mb-6 leading-tight px-2">
-                    Phone Number Verified Successfully
-                  </h2>
-                  <p className="text-gray-600 mb-8 sm:mb-10 text-sm sm:text-base px-2">
-                    You can now access your dashboard.
-                  </p>
-                  <button
-                    onClick={handleContinue}
-                    className="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg shadow-lg"
-                  >
-                    Continue
-                  </button>
                 </div>
               )}
+
+              <div className="text-center mt-6">
+                <p className="text-gray-600 text-sm">
+                  Already Verified?{" "}
+                  <Link
+                    href={FrontendRoutes.login}
+                    className="text-teal-600 hover:underline font-semibold"
+                  >
+                    Log in
+                  </Link>
+                </p>
+
+                <div className="mt-4">
+                  <Link
+                    href={FrontendRoutes.verifyEmailOTP}
+                    className="text-teal-600 hover:underline font-semibold"
+                  >
+                    Verify Email
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Footer */}
         <div className="bg-white text-teal-600 py-4 sm:py-6 text-center shadow-xl">
           <p className="text-xs sm:text-sm mb-3 sm:mb-4 px-4">
-            © 2025 FintechApp. All rights reserved.
+            © 2025 Pristin. All rights reserved.
           </p>
+          <div className="flex justify-center space-x-3 sm:space-x-4">
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
+              <svg
+                className="w-[16px] h-[16px] text-teal-600"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+              </svg>
+            </div>
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
+              <svg
+                className="w-[16px] h-[16px] text-teal-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
+              <svg
+                className="w-[16px] h-[16px] text-teal-600"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Phone Collection Modal */}
+      {showPhoneModal && (
+        <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 relative animate-slideUp">
+            <button
+              onClick={() => {
+                setShowPhoneModal(false);
+                router.push(FrontendRoutes.register);
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
+                <svg
+                  className="w-8 h-8 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
+              Enter Your Phone Number
+            </h2>
+            <p className="text-center text-gray-600 mb-6 text-sm">
+              We need your phone number to send you a verification code
+            </p>
+
+            <form onSubmit={handlePhoneModalSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone Number
+                </label>
+                <PhoneInput
+                  international
+                  defaultCountry="NG"
+                  value={modalPhone}
+                  onChange={(value) => {
+                    setModalPhone(value || "");
+                    setModalError("");
+                  }}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all phone-input"
+                  placeholder="Enter phone number"
+                />
+                {modalError && (
+                  <p className="text-red-500 text-xs mt-1">{modalError}</p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isModalSubmitting}
+                className={`w-full py-3 rounded-lg font-semibold text-base transition-all duration-200 ${
+                  isModalSubmitting
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg hover:shadow-xl"
+                }`}
+              >
+                {isModalSubmitting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <svg
+                      className="animate-spin h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Sending Code...
+                  </span>
+                ) : (
+                  "Send Verification Code"
+                )}
+              </button>
+
+              <p className="text-center text-sm text-gray-500 mt-4">
+                Don't have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => router.push(FrontendRoutes.register)}
+                  className="text-teal-600 hover:text-teal-700 font-semibold transition-colors"
+                >
+                  Sign up
+                </button>
+              </p>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
+        }
+
+        .phone-input input {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          border: 1px solid #d1d5db;
+          border-radius: 0.5rem;
+          outline: none;
+          transition: all 0.2s;
+        }
+
+        .phone-input input:focus {
+          border-color: #0d9488;
+          box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+        }
+
+        .phone-input .PhoneInputCountry {
+          margin-right: 0.5rem;
+          padding: 0.75rem 0.5rem;
+        }
+
+        .phone-input .PhoneInputCountrySelect {
+          border: none;
+          outline: none;
+        }
+
+        .phone-input .PhoneInputCountrySelectArrow {
+          opacity: 0.5;
+        }
+      `}</style>
     </div>
   );
 }
