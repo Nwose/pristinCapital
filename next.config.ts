@@ -1,7 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    optimizePackageImports: [],
+  },
+
+  // ❗ Completely disable LightningCSS
+  compiler: {
+    styledComponents: true,
+  },
+
+  // ❗ This is the important part
+  optimizeCss: false,
+
   images: {
     remotePatterns: [
       {
@@ -10,5 +21,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  devIndicators: false,
+
+  devIndicators: {
+    buildActivity: false,
+  },
 };
+
+export default nextConfig;
