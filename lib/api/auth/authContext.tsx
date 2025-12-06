@@ -124,6 +124,7 @@ export interface AuthContextType {
   refreshUser: () => Promise<void>;
   fetchCurrentUser: () => Promise<void>;
   clearError: () => void;
+  updatePartialUser: (partialUser: PartialUser) => void;
 }
 
 // Create context
@@ -377,6 +378,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     fetchCurrentUser,
     clearError,
     partialUser,
+    updatePartialUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

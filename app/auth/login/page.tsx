@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/api/auth/authContext";
@@ -259,6 +260,20 @@ export default function Login() {
                   {isLoading ? "Logging In..." : "Log In"}
                 </button>
               </form>
+              <div className="text-center mt-6">
+                <p className="text-gray-600 text-sm">
+                  Don't have an account?{" "}
+                  <Link href={ FrontendRoutes.register } className="text-teal-600 hover:underline font-semibold">
+                    Create an account
+                  </Link>
+                </p>
+
+                {/* <div className="mt-4">
+                  <Link href={ FrontendRoutes.verifyPhoneOTP } className="text-teal-600 hover:underline font-semibold">
+                    Verify Phone
+                  </Link>
+                </div> */}
+              </div>
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@
 export const Routes = {
     home: "/",
     login: "/auth/login",
-    register: "/auth/sign-up",
+    register: "/auth/register",
     chats: "/tests/chats",
     loginSecondFactor: "/auth/login/2ndfactor",
     verifyEmailOTP: "/auth/verify-email",
