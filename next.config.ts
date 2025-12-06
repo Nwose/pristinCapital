@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   images: {
     remotePatterns: [
       {
@@ -10,5 +9,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
   devIndicators: false,
+
+  // FIX for Vercel lightningcss build failure
+  experimental: {
+    optimizeCss: false,
+  },
 };
+
+export default nextConfig;
