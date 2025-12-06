@@ -10,9 +10,10 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  devIndicators: false,
+  devIndicators: {
+    buildActivity: false,
+  },
 
-  // FIX for Vercel lightningcss build failure
   experimental: {
     optimizeCss: false,
   },
