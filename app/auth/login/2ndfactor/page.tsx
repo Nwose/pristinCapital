@@ -92,22 +92,6 @@ export default function SecondFactorOTPPage() {
     }
   }, [email]);
 
-  // onSuccess handler
-  // const onSuccess = (data?: any) => {
-  //   const needsPhone = data?.need_phone_verification ?? data?.needs_phone_verification ?? false;
-
-  //   // Update Zustand store
-  //   updatePartialUser({ is_email_verified: true });
-
-  //   if (needsPhone) {
-  //     toastFn.success("Your email has been verified. Please verify your phone number.");
-  //     setTimeout(() => router.push("/verify-phone"), 1200);
-  //   } else {
-  //     toastFn.success("Your email has been verified.");
-  //     setTimeout(() => router.push("/login"), 1200);
-  //   }
-  // };
-
   const onSuccess = async (data?: TokenResponse) => {
     console.log("onSuccess data:", data);
     authUtils.initializeAuth(data as TokenResponse);
