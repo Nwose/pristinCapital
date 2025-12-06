@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: [],
+  },
+
+  // ❗ Completely disable LightningCSS
+  compiler: {
+    styledComponents: true,
+  },
+
+  // ❗ This is the important part
+  optimizeCss: false,
+
   images: {
     remotePatterns: [
       {
@@ -12,10 +24,6 @@ const nextConfig: NextConfig = {
 
   devIndicators: {
     buildActivity: false,
-  },
-
-  experimental: {
-    optimizeCss: false,
   },
 };
 
