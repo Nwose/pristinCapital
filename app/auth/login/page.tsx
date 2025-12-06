@@ -2,10 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import VerificationErrorModal, { VerificationStatus } from "@/components/auth/VerificationErrorModal";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/api/auth/authContext";
 import { authUtils, TokenResponse } from "@/lib/api/auth/TokenManager";
+import { ApiError } from "@/lib/api/ApiClient";
 import { isErrorWithCodeType } from "@/lib/api/ApiClient";
 import { toast as toastFn } from "react-toastify";
 import { Routes } from "@/lib/api/FrontendRoutes";
@@ -16,25 +18,62 @@ function isDetailsObject(details: unknown): details is { detail?: string; messag
   return typeof details === "object" && details !== null;
 }
 
+interface VerificationErrorShape {
+  error: "user email or phone number not verified";
+  details: {
+    email_verified: string;
+    phone_number_verified: string;
+  };
+}
+
+export function isAboutResourceVerification(
+  data: unknown
+): data is VerificationErrorShape {
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    "error" in data &&
+    (data as any).error ===
+    "user email or phone number not verified" &&
+    "details" in data &&
+    typeof (data as any).details === "object" &&
+    (data as any).details !== null &&
+    "email_verified" in (data as any).details &&
+    typeof (data as any).details.email_verified === "string" &&
+    "phone_number_verified" in (data as any).details &&
+    typeof (data as any).details.phone_number_verified === "string"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+
 
 export default function Login() {
   const router = useRouter();
   const auth = useAuth();
-  const { user, login, isLoading, error, clearError, partialUser } = auth;
+  const { user, login, isLoading, error, clearError, partialUser, updatePartialUser } = auth;
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(partialUser?.email || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showVerificationErrorModal, setShowVerificationErrorModal] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({
+    email_verified: "",
+    phone_number_verified: "",
+  });
 
   // If a tfa flow was started previously, AuthProvider stores the tfa_token in localStorage.
   // We detect that and advise the user to continue on the dedicated 2FA page.
   const [hasTfaToken, setHasTfaToken] = useState(false);
 
   useEffect(() => {
-    if (authUtils.isAuthenticated()){
-        toastFn.success("User is already logged in, redirecting to dashboard.");
-        router.push(FrontendRoutes.dashboard);
+    if (authUtils.isAuthenticated()) {
+      toastFn.success("User is already logged in, redirecting to dashboard.");
+      router.push(FrontendRoutes.dashboard);
     }
     const t = typeof window !== "undefined" ? localStorage.getItem("tfa_token") : null;
     const k = t && partialUser?.tfa_token === t;
@@ -68,6 +107,8 @@ export default function Login() {
       return;
     }
 
+    updatePartialUser({ email, phone: "" });
+
     try {
       // pass shape your backend expects (email/password). AuthProvider will handle first-factor,
       // tfa redirect, token storage, and user fetch as implemented there.
@@ -84,8 +125,16 @@ export default function Login() {
     } catch (err) {
       // auth.login already sets error in context; we only log here for debugging
       console.error("[Login] login failed:", err);
-      if (isErrorWithCodeType(err)){
-        setErrorMsg(err.message);
+      const error = err as ApiError;
+      setErrorMsg(error.message);
+      const errRes = error.details;
+      if (isAboutResourceVerification(errRes)) {
+        const details = errRes.details;
+        setVerificationStatus({
+          email_verified: details.email_verified,
+          phone_number_verified: details.phone_number_verified,
+        });
+        setShowVerificationErrorModal(true);
       }
     }
   };
@@ -187,7 +236,7 @@ export default function Login() {
               </h2>
 
               <p className="text-center text-teal-600 mb-8 lg:mb-10 text-sm sm:text-base">
-                Sign up or log in to your account
+                Welcome back, Let's continue where you left off!
               </p>
 
               {hasTfaToken && (
@@ -263,9 +312,13 @@ export default function Login() {
               <div className="text-center mt-6">
                 <p className="text-gray-600 text-sm">
                   Don't have an account?{" "}
-                  <Link href={ FrontendRoutes.register } className="text-teal-600 hover:underline font-semibold">
+                  <Link href={FrontendRoutes.register} className="text-teal-600 hover:underline font-semibold">
                     Create an account
                   </Link>
+                </p>
+                <p className="text-center text-gray-400 text-sm mt-4">
+                  <Link href={FrontendRoutes.verifyEmailOTP} className="text-teal-600 cursor-pointer hover:underline font-semibold transition-colors"> Verify Email </Link> |
+                  <Link href={FrontendRoutes.verifyPhoneOTP} className="text-teal-600 cursor-pointer hover:underline font-semibold transition-colors"> Verify Phone </Link>
                 </p>
 
                 {/* <div className="mt-4">
@@ -277,6 +330,13 @@ export default function Login() {
             </div>
           </div>
         </div>
+        {showVerificationErrorModal && (
+          <VerificationErrorModal
+            isOpen={showVerificationErrorModal}
+            onClose={() => setShowVerificationErrorModal(false)}
+            verificationStatus={verificationStatus}
+          />
+        )}
 
         <div className="bg-white text-teal-600 py-4 sm:py-6 text-center shadow-xl">
           <p className="text-xs sm:text-sm mb-3 sm:mb-4 px-4">

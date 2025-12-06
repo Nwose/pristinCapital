@@ -318,7 +318,7 @@ export default function VerifyPhone() {
 
       {/* Phone Collection Modal */}
       {showPhoneModal && (
-        <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-white/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 relative animate-slideUp">
             <button
               onClick={() => {
