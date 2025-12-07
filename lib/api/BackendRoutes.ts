@@ -1,3 +1,6 @@
+import { getLoanApplication } from "@/services/loan_application.service";
+import { deleteLoanProduct, getLoanProductById, updateLoanProduct } from "@/services/loan_product.service";
+
 export const baseURL = "";
 
 export const BackendRoutes = {
@@ -69,4 +72,21 @@ export const BackendRoutes = {
 
   /* ----------------------------- COMPLETE ----------------------------- */
   completeTwitter: `/complete/twitter/`,
+
+  /* ----------------------------- LOAN AUTH ----------------------------- */
+  getLoans: `${baseURL}/loan/`,
+  getLoan: (id: string) => `${baseURL}/loan/${id}/`,
+  getLoanApplications: `${baseURL}/loan-application/`,
+  getLoanApplication: (id: string) => `${baseURL}/loan-application/${id}/`,
+  approveLoanApplication: (id: string) => `${baseURL}/loan-application/${id}/approve/`,
+  rejectLoanApplication: (id: string) => `${baseURL}/loan-application/${id}/reject/`,
+  creaetLoanApplication: `${baseURL}/loan-application/`,
+  getLoanProducts: `${baseURL}/loan-product/`,
+  getLoanProduct: (id: string) => `${baseURL}/loan-product/${id}/`,
+  createLoanProduct : `${baseURL}/loan-product/`,
+  updateLoanProduct : (id: string) => `${baseURL}/loan-product/${id}/`,
+  deleteLoanProduct : (id: string) => `${baseURL}/loan-product/${id}/`,
+  getLoanProductConfig: `${baseURL}/loan-product/get_config/`,
+  getLoanRepayments: `${baseURL}/loan-repayment/`,
+  getLoanRepayment: (id: string) => `${baseURL}/loan-repayment/${id}/`,
 };

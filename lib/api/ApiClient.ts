@@ -13,9 +13,11 @@ export interface ApiError {
   details?: unknown;
 }
 
-export interface ApiRequestConfig extends RequestInit {
+export interface ApiRequestConfig<P = Record<string, string | number | boolean | undefined>>
+  extends RequestInit {
   requiresAuth?: boolean;
   skipErrorHandler?: boolean;
+  params?: P;
   timeout?: number;
 }
 
@@ -60,7 +62,7 @@ export function isErrorWithCodeType(obj: unknown): obj is ErrorWithCode {
 class ApiClient {
   private baseURL: string;
   private onUnauthorized?: () => void;
-  private requestInterceptors: Array<(config: ApiRequestConfig) => ApiRequestConfig | Promise<ApiRequestConfig>> = [];
+  private requestInterceptors: Array<(config: ApiRequestConfig<any>) => ApiRequestConfig<any> | Promise<ApiRequestConfig<any>>> = [];
   private responseInterceptors: Array<(response: Response) => Response | Promise<Response>> = [];
 
   constructor(baseURL: string = API_CONFIG.BASE_URL) {
@@ -96,23 +98,24 @@ class ApiClient {
   /**
    * GET request
    */
-  async get<T = unknown>(
+  async get<T = unknown, P = Record<string, any>>(
     endpoint: string,
-    config?: ApiRequestConfig
+    config?: ApiRequestConfig<P>
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { ...config, method: 'GET' });
+    return this.request<T, P>(endpoint, { ...(config as any), method: 'GET' });
   }
 
   /**
    * POST request
    */
-  async post<T = unknown>(
+
+  async post<T = unknown, P = Record<string, any>>(
     endpoint: string,
     data?: unknown,
-    config?: ApiRequestConfig
+    config?: ApiRequestConfig<P>
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      ...config,
+    return this.request<T, P>(endpoint, {
+      ...(config as any),
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
     });
@@ -121,13 +124,13 @@ class ApiClient {
   /**
    * PUT request
    */
-  async put<T = unknown>(
+  async put<T = unknown, P = Record<string, any>>(
     endpoint: string,
     data?: unknown,
-    config?: ApiRequestConfig
+    config?: ApiRequestConfig<P>
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      ...config,
+    return this.request<T, P>(endpoint, {
+      ...(config as any),
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
     });
@@ -136,13 +139,13 @@ class ApiClient {
   /**
    * PATCH request
    */
-  async patch<T = unknown>(
+  async patch<T = unknown, P = Record<string, any>>(
     endpoint: string,
     data?: unknown,
-    config?: ApiRequestConfig
+    config?: ApiRequestConfig<P>
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      ...config,
+    return this.request<T, P>(endpoint, {
+      ...(config as any),
       method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined,
     });
@@ -151,30 +154,35 @@ class ApiClient {
   /**
    * DELETE request
    */
-  async delete<T = unknown>(
+  async delete<T = unknown, P = Record<string, any>>(
     endpoint: string,
-    config?: ApiRequestConfig
+    config?: ApiRequestConfig<P>
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { ...config, method: 'DELETE' });
+    return this.request<T, P>(endpoint, {
+      ...(config as any),
+      method: 'DELETE'
+    });
   }
 
   /**
    * Main request method
    */
-  private async request<T>(
+  private async request<T, P = Record<string, any>>(
     endpoint: string,
-    config: ApiRequestConfig = {}
+    config: ApiRequestConfig<P> = {}
   ): Promise<ApiResponse<T>> {
     const {
       requiresAuth = true,
       skipErrorHandler = false,
       timeout = API_CONFIG.TIMEOUT,
+      params = {},
       ...fetchConfig
-    } = config;
+    } = config as ApiRequestConfig<any>;
 
     try {
       // Build URL
-      const url = this.buildURL(endpoint);
+      // const url = this.buildURL(endpoint);
+      const url = this.buildURLWithParams(endpoint, params)
 
       // Prepare headers
       const headers = await this.prepareHeaders(config.headers, requiresAuth);
@@ -207,10 +215,10 @@ class ApiClient {
           response = await interceptor(response);
         }
 
-        if (!response.ok){
+        if (!response.ok) {
           const error = response;
-          if (isErrorWithCodeType(error)){
-            if (error.code === "TOKEN_EXPIRED"){
+          if (isErrorWithCodeType(error)) {
+            if (error.code === "TOKEN_EXPIRED") {
               console.log("ApiClient: trying to referesh token...")
               try {
                 await tokenManager.refreshAccessToken();
@@ -257,20 +265,63 @@ class ApiClient {
     }
   }
 
+  private serializeParams(params: Record<string, any> | undefined): string {
+    if (!params) return "";
+
+    const parts: string[] = [];
+
+    for (const key of Object.keys(params)) {
+      const val = (params as any)[key];
+
+      if (val === undefined || val === null) continue;
+
+      // arrays -> repeat key for each item
+      if (Array.isArray(val)) {
+        for (const v of val) {
+          parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(v))}`);
+        }
+        continue;
+      }
+
+      // booleans/numbers/dates -> string
+      if (val instanceof Date) {
+        parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val.toISOString())}`);
+      } else {
+        parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(val))}`);
+      }
+    }
+
+    return parts.length ? `?${parts.join("&")}` : "";
+  }
+
+
   /**
    * Build full URL
    */
   private buildURL(endpoint: string): string {
     // Remove leading slash from endpoint if present
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-    
+
     // Remove trailing slash from baseURL if present
-    const cleanBaseURL = this.baseURL.endsWith('/') 
-      ? this.baseURL.slice(0, -1) 
+    const cleanBaseURL = this.baseURL.endsWith('/')
+      ? this.baseURL.slice(0, -1)
       : this.baseURL;
-    
+
     return `${cleanBaseURL}/${cleanEndpoint}`;
   }
+
+  private buildURLWithParams(endpoint: string, params?: Record<string, any>): string {
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    const cleanBaseURL = this.baseURL.endsWith('/') ? this.baseURL.slice(0, -1) : this.baseURL;
+    const base = `${cleanBaseURL}/${cleanEndpoint}`;
+    const qs = this.serializeParams(params);
+    return qs ? `${base}${qs}` : base;
+  }
+
+  setBaseURL(url: string): void {
+    this.baseURL = url;
+  }
+
 
   /**
    * Prepare request headers
@@ -302,7 +353,7 @@ class ApiClient {
    */
   private async parseResponse<T>(response: Response): Promise<T> {
     const contentType = response.headers.get('content-type');
-    
+
     // Handle empty responses
     if (response.status === 204 || !contentType) {
       return null as T;
@@ -336,8 +387,8 @@ class ApiClient {
       const contentType = response.headers.get('content-type');
       if (contentType?.includes('application/json')) {
         errorDetails = await response.json();
-        errorMessage = (errorDetails as { message?: string; detail?: string, error?: string }).message 
-          || (errorDetails as { message?: string; detail?: string, error?: string }).detail 
+        errorMessage = (errorDetails as { message?: string; detail?: string, error?: string }).message
+          || (errorDetails as { message?: string; detail?: string, error?: string }).detail
           || (errorDetails as { message?: string; detail?: string, error?: string }).error
           || errorMessage;
       } else {
@@ -462,29 +513,29 @@ export const configureApiClient = (config: {
   onUnauthorized?: () => void;
 }): void => {
   if (config.baseURL) {
-    // Create new instance with custom base URL
-    Object.assign(apiClient, new ApiClient(config.baseURL));
+    apiClient.setBaseURL(config.baseURL);
   }
-  
+
   if (config.onUnauthorized) {
     apiClient.onUnauthorizedCallback(config.onUnauthorized);
   }
 };
 
+
 // Export convenience methods
 export const api = {
-  get: <T>(endpoint: string, config?: ApiRequestConfig) => 
-    apiClient.get<T>(endpoint, config),
-  
-  post: <T>(endpoint: string, data?: unknown, config?: ApiRequestConfig) => 
-    apiClient.post<T>(endpoint, data, config),
-  
-  put: <T>(endpoint: string, data?: unknown, config?: ApiRequestConfig) => 
-    apiClient.put<T>(endpoint, data, config),
-  
-  patch: <T>(endpoint: string, data?: unknown, config?: ApiRequestConfig) => 
-    apiClient.patch<T>(endpoint, data, config),
-  
-  delete: <T>(endpoint: string, config?: ApiRequestConfig) => 
-    apiClient.delete<T>(endpoint, config),
+  get: <T, P = Record<string, any>>(endpoint: string, config?: ApiRequestConfig<P>) =>
+    apiClient.get<T, P>(endpoint, config),
+
+  post: <T, P = Record<string, any>>(endpoint: string, data?: unknown, config?: ApiRequestConfig<P>) =>
+    apiClient.post<T, P>(endpoint, data, config),
+
+  put: <T, P = Record<string, any>>(endpoint: string, data?: unknown, config?: ApiRequestConfig<P>) =>
+    apiClient.put<T, P>(endpoint, data, config),
+
+  patch: <T, P = Record<string, any>>(endpoint: string, data?: unknown, config?: ApiRequestConfig<P>) =>
+    apiClient.patch<T, P>(endpoint, data, config),
+
+  delete: <T, P = Record<string, any>>(endpoint: string, config?: ApiRequestConfig<P>) =>
+    apiClient.delete<T, P>(endpoint, config),
 };

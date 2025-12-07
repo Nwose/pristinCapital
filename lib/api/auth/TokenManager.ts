@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-
+import { BackendRoutes } from '../BackendRoutes';
 // Types
 export interface TokenResponse {
   access: string;
@@ -247,7 +247,7 @@ class TokenManager {
       }
 
       // Call your refresh endpoint
-      const response = await fetch('/api/auth/token/refresh/', {
+      const response = await fetch(BackendRoutes.refreshToken, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
