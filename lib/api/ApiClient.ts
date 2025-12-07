@@ -179,10 +179,16 @@ class ApiClient {
       ...fetchConfig
     } = config as ApiRequestConfig<any>;
 
+    // Track retry attempts for this specific request
+    const retryCount = (config as any)._retryCount || 0;
+    const maxRetries = (config as any).maxRetries ?? API_CONFIG.MAX_RETRIES;
+
+    let timeoutId: NodeJS.Timeout | number | undefined;
+    let controller: AbortController | undefined;
+
     try {
       // Build URL
-      // const url = this.buildURL(endpoint);
-      const url = this.buildURLWithParams(endpoint, params)
+      const url = this.buildURLWithParams(endpoint, params);
 
       // Prepare headers
       const headers = await this.prepareHeaders(config.headers, requiresAuth);
@@ -198,8 +204,8 @@ class ApiClient {
       }
 
       // Create abort controller for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      controller = new AbortController();
+      timeoutId = setTimeout(() => controller?.abort(), timeout);
 
       try {
         // Make request
@@ -209,21 +215,44 @@ class ApiClient {
         });
 
         clearTimeout(timeoutId);
+        timeoutId = undefined;
 
         // Apply response interceptors
         for (const interceptor of this.responseInterceptors) {
           response = await interceptor(response);
         }
 
-        if (!response.ok) {
-          const error = response;
-          if (isErrorWithCodeType(error)) {
-            if (error.code === "TOKEN_EXPIRED") {
-              console.log("ApiClient: trying to referesh token...")
+        // Handle token expiration with single retry
+        if (!response.ok && response.status === 401) {
+          // Clone response to read body without consuming it
+          const clonedResponse = response.clone();
+
+          try {
+            const errorBody = await clonedResponse.json();
+
+            if (errorBody?.code === "TOKEN_EXPIRED" || errorBody?.error === "token_expired") {
+              // Prevent infinite retry loops
+              if ((config as any)._tokenRefreshAttempted) {
+                console.error('[ApiClient] Token refresh already attempted, failing request');
+                this.handleUnauthorized();
+                throw this.createError(
+                  'Authentication session expired. Please login again.',
+                  401,
+                  'TOKEN_EXPIRED'
+                );
+              }
+
+              console.log('[ApiClient] Token expired, attempting refresh...');
+
               try {
                 await tokenManager.refreshAccessToken();
-                // Retry request with new token
-                return this.request<T>(endpoint, config);
+
+                // Retry request with new token - mark as refresh attempted
+                return this.request<T, P>(endpoint, {
+                  ...config,
+                  _tokenRefreshAttempted: true,
+                  _retryCount: 0, // Reset retry count for token refresh
+                } as any);
               } catch (refreshError) {
                 console.error('[ApiClient] Token refresh failed:', refreshError);
                 this.handleUnauthorized();
@@ -234,10 +263,32 @@ class ApiClient {
                 );
               }
             }
+          } catch (parseError) {
+            // If we can't parse the error body, continue with normal error handling
+            console.warn('[ApiClient] Could not parse 401 error body:', parseError);
           }
         }
 
-        // Handle other error status codes
+        // Handle retryable errors (network issues, 5xx, rate limits)
+        if (!response.ok && this.isRetryableError(response.status)) {
+          if (retryCount < maxRetries) {
+            const delay = this.calculateRetryDelay(retryCount);
+            console.warn(
+              `[ApiClient] Request failed with status ${response.status}, retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`
+            );
+
+            await this.sleep(delay);
+
+            return this.request<T, P>(endpoint, {
+              ...config,
+              _retryCount: retryCount + 1,
+            } as any);
+          } else {
+            console.error(`[ApiClient] Max retries (${maxRetries}) reached for ${endpoint}`);
+          }
+        }
+
+        // Handle non-retryable error status codes
         if (!response.ok) {
           throw await this.handleErrorResponse(response, skipErrorHandler);
         }
@@ -251,18 +302,103 @@ class ApiClient {
           headers: response.headers,
         };
       } finally {
-        clearTimeout(timeoutId);
+        // Ensure timeout is always cleared
+        if (timeoutId !== undefined) {
+          clearTimeout(timeoutId);
+        }
       }
     } catch (error) {
+      // Clean up timeout on error
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+
+      // Handle timeout errors
       if (error instanceof Error && error.name === 'AbortError') {
+        // Retry on timeout if retries available
+        if (retryCount < maxRetries) {
+          const delay = this.calculateRetryDelay(retryCount);
+          console.warn(
+            `[ApiClient] Request timeout, retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`
+          );
+
+          await this.sleep(delay);
+
+          return this.request<T, P>(endpoint, {
+            ...config,
+            _retryCount: retryCount + 1,
+          } as any);
+        }
+
         throw this.createError(
-          'Request timeout',
+          'Request timeout - server did not respond in time',
           408,
           'REQUEST_TIMEOUT'
         );
       }
+
+      // Handle network errors
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        // Retry on network errors if retries available
+        if (retryCount < maxRetries) {
+          const delay = this.calculateRetryDelay(retryCount);
+          console.warn(
+            `[ApiClient] Network error, retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`
+          );
+
+          await this.sleep(delay);
+
+          return this.request<T, P>(endpoint, {
+            ...config,
+            _retryCount: retryCount + 1,
+          } as any);
+        }
+
+        throw this.createError(
+          'Network error - please check your connection',
+          0,
+          'NETWORK_ERROR',
+          error
+        );
+      }
+
       throw this.handleRequestError(error, skipErrorHandler);
     }
+  }
+
+  /**
+   * Determine if an HTTP status code is retryable
+   */
+  private isRetryableError(status: number): boolean {
+    return (
+      status === 408 || // Request Timeout
+      status === 429 || // Too Many Requests
+      status === 500 || // Internal Server Error
+      status === 502 || // Bad Gateway
+      status === 503 || // Service Unavailable
+      status === 504    // Gateway Timeout
+    );
+  }
+
+  /**
+   * Calculate exponential backoff delay with jitter
+   */
+  private calculateRetryDelay(retryCount: number): number {
+    const baseDelay = API_CONFIG.RETRY_DELAY;
+    const exponentialDelay = baseDelay * Math.pow(2, retryCount);
+    const maxDelay = 10000; // Cap at 10 seconds
+    const delay = Math.min(exponentialDelay, maxDelay);
+
+    // Add jitter (±25%) to prevent thundering herd
+    const jitter = delay * 0.25 * (Math.random() * 2 - 1);
+    return Math.round(delay + jitter);
+  }
+
+  /**
+   * Sleep helper for retry delays
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   private serializeParams(params: Record<string, any> | undefined): string {

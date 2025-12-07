@@ -1,6 +1,3 @@
-import { getLoanApplication } from "@/services/loan_application.service";
-import { deleteLoanProduct, getLoanProductById, updateLoanProduct } from "@/services/loan_product.service";
-
 export const baseURL = "";
 
 export const BackendRoutes = {
