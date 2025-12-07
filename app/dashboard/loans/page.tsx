@@ -1,13 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/api/auth/authContext";
+import { authUtils } from "@/lib/api/auth/TokenManager";
+import { FrontendRoutes } from "@/lib/api/FrontendRoutes";
 import {
-  getLoanApplications,
-  getUserLoans,
-} from "@/services/loan_application.service";
-import { getAllLoanProducts } from "@/services/loan_product.service";
-import { makeRequest } from "@/services/base";
+  LoanService,
+  LoanApplicationService,
+  LoanProductService,
+  type Loan,
+  type LoanApplication,
+  type LoanProduct,
+  type PaginatedLoans,
+  type PaginatedLoanApplications,
+  type PaginatedLoanProducts,
+} from "@/lib/api/services/Loan.Service";
 import { toast } from "react-toastify";
 import {
   Loader2,
@@ -18,183 +26,363 @@ import {
   ArrowLeft,
   Landmark,
   Briefcase,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  ArrowRight,
+  RefreshCw,
+  Info,
 } from "lucide-react";
 
-/* ------------------ TYPES ------------------ */
-interface LoanApplication {
-  id: string;
-  purpose: string;
-  amount: string | number;
-  created_at?: string;
-  status: string;
-}
-
+/* ==================== TYPES ==================== */
 interface LoanSummary {
-  balance: string;
-  debt: string;
-  pending: string;
+  totalActive: number;
+  totalDebt: string;
+  totalPaid: string;
+  activeLoans: number;
+  pendingApplications: number;
+  overdueCount: number;
 }
 
-interface LoanProduct {
-  id: string;
-  name: string;
-  description: string;
-  max_amount: number;
-  max_tenure_months: number;
-  interest_rate: number;
+interface BankDetails {
+  bank_name: string;
+  account_number: string;
+  account_name: string;
 }
 
-/* ------------------ MAIN PAGE ------------------ */
+interface BusinessDetails {
+  business_name: string;
+  business_address: string;
+  business_type: string;
+}
+
+/* ==================== UTILITY FUNCTIONS ==================== */
+const formatCurrency = (amount: string | number): string => {
+  const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 2,
+  }).format(isNaN(num) ? 0 : num);
+};
+
+const formatDate = (dateString: string): string => {
+  try {
+    return new Date(dateString).toLocaleDateString("en-NG", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return "N/A";
+  }
+};
+
+const formatDateTime = (dateString: string): string => {
+  try {
+    return new Date(dateString).toLocaleString("en-NG", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  } catch {
+    return "N/A";
+  }
+};
+
+/* ==================== MAIN COMPONENT ==================== */
 export default function LoansPage() {
-  const [loanHistory, setLoanHistory] = useState<LoanApplication[]>([]);
-  const [summary, setSummary] = useState<LoanSummary>({
-    balance: "0.00",
-    debt: "0.00",
-    pending: "0.00",
-  });
-  const [loanProducts, setLoanProducts] = useState<LoanProduct[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [productLoading, setProductLoading] = useState(true);
+  const { user } = useAuth();
+  const router = useRouter();
 
-  /* ----------- MODALS ----------- */
-  const [showModal, setShowModal] = useState(false);
+  /* ========== STATE MANAGEMENT ========== */
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [applications, setApplications] = useState<LoanApplication[]>([]);
+  const [products, setProducts] = useState<LoanProduct[]>([]);
+
+  const [loansLoading, setLoansLoading] = useState(true);
+  const [applicationsLoading, setApplicationsLoading] = useState(true);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [error, setError] = useState<string | null>(null);
+
+  /* ========== MODALS ========== */
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showBankModal, setShowBankModal] = useState(false);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
 
-  /* ----------- BANK FORM ----------- */
-  const [bankName, setBankName] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
-  const [accountName, setAccountName] = useState("");
+  /* ========== FORM STATE ========== */
+  const [bankDetails, setBankDetails] = useState<BankDetails>({
+    bank_name: "",
+    account_number: "",
+    account_name: "",
+  });
+  const [businessDetails, setBusinessDetails] = useState<BusinessDetails>({
+    business_name: "",
+    business_address: "",
+    business_type: "",
+  });
   const [savingBank, setSavingBank] = useState(false);
-
-  /* ----------- BUSINESS FORM ----------- */
-  const [businessName, setBusinessName] = useState("");
-  const [businessAddress, setBusinessAddress] = useState("");
-  const [businessType, setBusinessType] = useState("");
   const [savingBusiness, setSavingBusiness] = useState(false);
 
-  const router = useRouter();
-
-  /* ------------------ FETCH LOANS ------------------ */
+  /* ========== AUTH CHECK ========== */
   useEffect(() => {
-    fetchLoans();
-    fetchLoanProducts();
-  }, []);
+    if (!authUtils.isAuthenticated() || !user) {
+      router.push(FrontendRoutes.login);
+    }
+  }, [user, router]);
+
+  /* ========== DATA FETCHING ========== */
+  useEffect(() => {
+    if (user) {
+      fetchAllData();
+    }
+  }, [user]);
+
+  const fetchAllData = async () => {
+    await Promise.all([fetchLoans(), fetchApplications(), fetchProducts()]);
+  };
 
   const fetchLoans = async () => {
     try {
-      setLoading(true);
-      const loanApps = await getLoanApplications();
-      const userLoans = await getUserLoans();
+      setLoansLoading(true);
+      setError(null);
 
-      const validLoanApps: LoanApplication[] = Array.isArray(loanApps)
-        ? loanApps
-        : (loanApps as any)?.results && Array.isArray((loanApps as any).results)
-        ? (loanApps as any).results
-        : [];
-
-      const cleanedLoans = validLoanApps.map((item) => ({
-        ...item,
-        purpose:
-          item.purpose && item.purpose !== "N/A"
-            ? item.purpose
-            : "Personal Loan",
-      }));
-
-      setLoanHistory(cleanedLoans);
-
-      if (
-        userLoans &&
-        typeof userLoans === "object" &&
-        !Array.isArray(userLoans)
-      ) {
-        setSummary({
-          balance: userLoans?.balance?.toString() ?? "0.00",
-          debt: userLoans?.debt?.toString() ?? "0.00",
-          pending: userLoans?.pending?.toString() ?? "0.00",
-        });
-      }
-    } catch (error: any) {
-      console.error("❌ Failed to fetch loans:", error?.message || error);
-      toast.error("Failed to load loan data. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* ------------------ FETCH LOAN PRODUCTS ------------------ */
-  const fetchLoanProducts = async () => {
-    try {
-      setProductLoading(true);
-      const data = await getAllLoanProducts();
-
-      const list: LoanProduct[] = Array.isArray(data)
-        ? data
-        : (data as any)?.results && Array.isArray((data as any).results)
-        ? (data as any).results
-        : (data as any)?.data && Array.isArray((data as any).data)
-        ? (data as any).data
-        : [];
-
-      setLoanProducts(list);
-    } catch (err: any) {
-      console.error("❌ Failed to fetch loan products:", err);
-      toast.error("Failed to load loan products.");
-    } finally {
-      setProductLoading(false);
-    }
-  };
-
-  /* ------------------ HELPERS ------------------ */
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "N/A";
-    try {
-      return new Date(dateString).toLocaleString("en-NG", {
-        dateStyle: "medium",
-        timeStyle: "short",
+      const response: PaginatedLoans = await LoanService.getLoans({
+        user: user?.id,
       });
-    } catch {
-      return dateString;
+
+      setLoans(response.results || []);
+    } catch (err: any) {
+      console.error("❌ Error fetching loans:", err);
+      const errorMsg = err?.message || "Failed to load loans";
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setLoansLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "approved":
-        return "text-green-600";
-      case "pending":
-        return "text-yellow-500";
-      case "rejected":
-      case "failed":
-        return "text-red-500";
+  const fetchApplications = async () => {
+    try {
+      setApplicationsLoading(true);
+
+      const response: PaginatedLoanApplications =
+        await LoanApplicationService.getLoanApplications({
+          user: user?.id,
+        });
+
+      setApplications(response.results || []);
+    } catch (err: any) {
+      console.error("❌ Error fetching applications:", err);
+      toast.error(err?.message || "Failed to load loan applications");
+    } finally {
+      setApplicationsLoading(false);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      setProductsLoading(true);
+
+      const response: PaginatedLoanProducts =
+        await LoanProductService.getLoanProducts({
+          is_active: true,
+        });
+
+      setProducts(response.results || []);
+    } catch (err: any) {
+      console.error("❌ Error fetching products:", err);
+      toast.error(err?.message || "Failed to load loan products");
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchAllData();
+    setRefreshing(false);
+    toast.success("Data refreshed successfully");
+  };
+
+  /* ========== COMPUTED VALUES ========== */
+  const summary: LoanSummary = useMemo(() => {
+    const activeLoans = loans.filter((l) => l.status === "ACTIVE");
+    const pendingApps = applications.filter((a) => a.status === "PENDING");
+
+    const totalDebt = activeLoans.reduce(
+      (sum, loan) => sum + parseFloat(loan.remaining_balance || "0"),
+      0
+    );
+
+    const paidLoans = loans.filter((l) => l.status === "PAID");
+    const totalPaid = paidLoans.reduce(
+      (sum, loan) => sum + parseFloat(loan.total_payable || "0"),
+      0
+    );
+
+    const overdueCount = loans.filter((loan) => {
+      if (loan.status !== "ACTIVE") return false;
+      return loan.repayments?.some((r) => r.status === "OVERDUE");
+    }).length;
+
+    return {
+      totalActive: activeLoans.length,
+      totalDebt: totalDebt.toFixed(2),
+      totalPaid: totalPaid.toFixed(2),
+      activeLoans: activeLoans.length,
+      pendingApplications: pendingApps.length,
+      overdueCount,
+    };
+  }, [loans, applications]);
+
+  /* ========== RECENT ITEMS ========== */
+  const recentActivity = useMemo(() => {
+    const combined = [
+      ...loans.map((l) => ({
+        id: l.id,
+        type: "loan" as const,
+        status: l.status,
+        amount: l.principal_amount,
+        date: l.created_at,
+        data: l,
+      })),
+      ...applications.map((a) => ({
+        id: a.id,
+        type: "application" as const,
+        status: a.status,
+        amount: a.amount_requested,
+        date: a.created_at,
+        data: a,
+      })),
+    ];
+
+    return combined
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [loans, applications]);
+
+  /* ========== STATUS HELPERS ========== */
+  const getStatusConfig = (
+    status: string,
+    type: "loan" | "application"
+  ): {
+    color: string;
+    bgColor: string;
+    icon: React.ReactNode;
+    label: string;
+  } => {
+    if (type === "application") {
+      switch (status) {
+        case "APPROVED":
+          return {
+            color: "text-green-700",
+            bgColor: "bg-green-50",
+            icon: <CheckCircle2 size={16} />,
+            label: "Approved",
+          };
+        case "PENDING":
+          return {
+            color: "text-yellow-700",
+            bgColor: "bg-yellow-50",
+            icon: <Clock size={16} />,
+            label: "Pending",
+          };
+        case "REJECTED":
+          return {
+            color: "text-red-700",
+            bgColor: "bg-red-50",
+            icon: <XCircle size={16} />,
+            label: "Rejected",
+          };
+        default:
+          return {
+            color: "text-gray-700",
+            bgColor: "bg-gray-50",
+            icon: <Info size={16} />,
+            label: status,
+          };
+      }
+    }
+
+    // Loan status
+    switch (status) {
+      case "ACTIVE":
+        return {
+          color: "text-blue-700",
+          bgColor: "bg-blue-50",
+          icon: <TrendingUp size={16} />,
+          label: "Active",
+        };
+      case "PAID":
+        return {
+          color: "text-green-700",
+          bgColor: "bg-green-50",
+          icon: <CheckCircle2 size={16} />,
+          label: "Paid",
+        };
+      case "DEFAULTED":
+        return {
+          color: "text-red-700",
+          bgColor: "bg-red-50",
+          icon: <AlertCircle size={16} />,
+          label: "Defaulted",
+        };
+      case "CANCELLED":
+        return {
+          color: "text-gray-700",
+          bgColor: "bg-gray-50",
+          icon: <XCircle size={16} />,
+          label: "Cancelled",
+        };
+      case "UNDISBURSED":
+        return {
+          color: "text-orange-700",
+          bgColor: "bg-orange-50",
+          icon: <Clock size={16} />,
+          label: "Undisbursed",
+        };
       default:
-        return "text-gray-600";
+        return {
+          color: "text-gray-700",
+          bgColor: "bg-gray-50",
+          icon: <Info size={16} />,
+          label: status,
+        };
     }
   };
 
-  /* --------------------------------------------------------- */
-  /* ------------------- SAVE BANK DETAILS ------------------- */
-  /* --------------------------------------------------------- */
+  /* ========== SAVE HANDLERS ========== */
   const saveBankDetails = async () => {
-    if (!bankName || !accountNumber || !accountName)
-      return toast.error("Please fill in all fields");
+    if (
+      !bankDetails.bank_name ||
+      !bankDetails.account_number ||
+      !bankDetails.account_name
+    ) {
+      toast.error("Please fill in all bank details");
+      return;
+    }
 
     try {
       setSavingBank(true);
 
-      await makeRequest("api/v1/bank-details/", "POST", {
-        bank_name: bankName,
-        account_number: accountNumber,
-        account_name: accountName,
+      // Using the makeRequest pattern from original code
+      const response = await fetch("/api/v1/bank-details/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authUtils.getAccessToken()}`,
+        },
+        body: JSON.stringify(bankDetails),
       });
 
+      if (!response.ok) throw new Error("Failed to save bank details");
+
       toast.success("Bank details saved successfully!");
-
-      // Reset form
-      setBankName("");
-      setAccountNumber("");
-      setAccountName("");
-
+      setBankDetails({ bank_name: "", account_number: "", account_name: "" });
       setShowBankModal(false);
     } catch (err) {
       console.error(err);
@@ -204,29 +392,36 @@ export default function LoansPage() {
     }
   };
 
-  /* ------------------------------------------------------------ */
-  /* ------------------- SAVE BUSINESS DETAILS ------------------ */
-  /* ------------------------------------------------------------ */
   const saveBusinessDetails = async () => {
-    if (!businessName || !businessAddress || !businessType)
-      return toast.error("Please fill in all fields");
+    if (
+      !businessDetails.business_name ||
+      !businessDetails.business_address ||
+      !businessDetails.business_type
+    ) {
+      toast.error("Please fill in all business details");
+      return;
+    }
 
     try {
       setSavingBusiness(true);
 
-      await makeRequest("api/v1/business-details/", "POST", {
-        business_name: businessName,
-        business_address: businessAddress,
-        business_type: businessType,
+      const response = await fetch("/api/v1/business-details/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authUtils.getAccessToken()}`,
+        },
+        body: JSON.stringify(businessDetails),
       });
 
-      toast.success("Business details saved!");
+      if (!response.ok) throw new Error("Failed to save business details");
 
-      // Reset form
-      setBusinessName("");
-      setBusinessAddress("");
-      setBusinessType("");
-
+      toast.success("Business details saved successfully!");
+      setBusinessDetails({
+        business_name: "",
+        business_address: "",
+        business_type: "",
+      });
       setShowBusinessModal(false);
     } catch (err) {
       console.error(err);
@@ -236,357 +431,651 @@ export default function LoansPage() {
     }
   };
 
-  /* ---------------------- RETURN UI ---------------------- */
+  /* ========== LOADING STATE ========== */
+  const isInitialLoading =
+    loansLoading && applicationsLoading && productsLoading;
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-[#019893] mx-auto mb-4" />
+          <p className="text-gray-600 text-lg">
+            Loading your loan dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== RENDER ========== */
   return (
-    <div className="flex flex-col gap-12 w-full">
-      {/* ------------------------------------------------------------- */}
-      {/*            SECTION 1: SUMMARY + HISTORY                      */}
-      {/* ------------------------------------------------------------- */}
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* LEFT: SUMMARY */}
-        <div className="flex-1 max-w-xl">
-          <div className="bg-white rounded-2xl border border-[#CCEAE9] p-8 mb-6 relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10 flex items-center justify-center pointer-events-none select-none">
-              <svg width="220" height="120" viewBox="0 0 220 120" fill="none">
-                <rect
-                  x="30"
-                  y="30"
-                  width="160"
-                  height="60"
-                  rx="10"
-                  fill="#CCEAE9"
-                />
-              </svg>
-            </div>
-            <div className="relative z-10">
-              <div className="text-gray-400 text-lg mb-2">
-                Current Loan Balance
-              </div>
-              <div className="text-3xl font-bold text-[#001B2E] mb-6">
-                ₦{summary.balance}
-              </div>
-              <div className="text-gray-400 text-lg mb-2">Loan Debt</div>
-              <div className="text-2xl font-bold text-[#001B2E] mb-6">
-                ₦{summary.debt}
-              </div>
-              <div className="text-gray-400 text-lg mb-2">Pending Loan</div>
-              <div className="text-2xl font-bold text-[#001B2E] mb-6">
-                ₦{summary.pending}
-              </div>
-            </div>
+    <div className="flex flex-col gap-8 w-full pb-12">
+      {/* ========== HEADER ========== */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-[#001B2E]">Loan Dashboard</h1>
+          <p className="text-gray-500 mt-1">
+            Manage your loans and applications
+          </p>
+        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-[#CCEAE9] rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw
+            size={18}
+            className={refreshing ? "animate-spin text-[#019893]" : ""}
+          />
+          <span className="font-medium text-sm">
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </span>
+        </button>
+      </div>
+
+      {/* ========== ERROR BANNER ========== */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="text-red-600 mt-0.5" size={20} />
+          <div>
+            <p className="text-red-800 font-medium">Error loading data</p>
+            <p className="text-red-600 text-sm">{error}</p>
           </div>
+        </div>
+      )}
 
-          {/* ACTION BUTTONS */}
-          <div className="flex flex-col gap-3 mt-4">
-            <button
-              onClick={() => router.push("/admin/loans/request")}
-              className="w-full bg-[#019893] hover:bg-[#017C77] text-white py-3 rounded-lg font-semibold text-lg transition-all"
-            >
-              Request for Loan
-            </button>
-
-            <div className="text-center text-gray-400 text-xs">
-              Please add your Business Details before you request for a loan
-            </div>
-
-            <button
-              onClick={() => setShowModal(true)}
-              className="w-full bg-[#019893] hover:bg-[#017C77] text-white py-3 rounded-lg font-semibold text-lg transition-all"
-            >
-              Add your Business Details
-            </button>
+      {/* ========== SUMMARY CARDS ========== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-gradient-to-br from-[#019893] to-[#017C77] text-white rounded-2xl p-6 shadow-lg">
+          <div className="flex items-center justify-between mb-3">
+            <Wallet size={24} className="opacity-80" />
+            {summary.overdueCount > 0 && (
+              <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                {summary.overdueCount} Overdue
+              </span>
+            )}
+          </div>
+          <div className="text-2xl font-bold mb-1">
+            {formatCurrency(summary.totalDebt)}
+          </div>
+          <div className="text-sm opacity-90">Total Outstanding Debt</div>
+          <div className="mt-3 text-xs opacity-75">
+            {summary.activeLoans} active loan{summary.activeLoans !== 1 && "s"}
           </div>
         </div>
 
-        {/* RIGHT: LOAN HISTORY */}
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-xl font-semibold text-[#001B2E]">
-              Loan History
+        <div className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <CheckCircle2 size={24} className="text-green-600" />
+          </div>
+          <div className="text-2xl font-bold text-[#001B2E] mb-1">
+            {formatCurrency(summary.totalPaid)}
+          </div>
+          <div className="text-sm text-gray-600">Total Paid</div>
+          <div className="mt-3 text-xs text-gray-500">
+            {loans.filter((l) => l.status === "PAID").length} completed loan
+            {loans.filter((l) => l.status === "PAID").length !== 1 && "s"}
+          </div>
+        </div>
+
+        <div className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <Clock size={24} className="text-yellow-600" />
+          </div>
+          <div className="text-2xl font-bold text-[#001B2E] mb-1">
+            {summary.pendingApplications}
+          </div>
+          <div className="text-sm text-gray-600">Pending Applications</div>
+          <div className="mt-3 text-xs text-gray-500">Awaiting approval</div>
+        </div>
+
+        <div className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <TrendingUp size={24} className="text-blue-600" />
+          </div>
+          <div className="text-2xl font-bold text-[#001B2E] mb-1">
+            {loans.length}
+          </div>
+          <div className="text-sm text-gray-600">Total Loans</div>
+          <div className="mt-3 text-xs text-gray-500">
+            {applications.length} application
+            {applications.length !== 1 && "s"} submitted
+          </div>
+        </div>
+      </div>
+
+      {/* ========== MAIN CONTENT GRID ========== */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* ========== LEFT COLUMN: ACTIONS + RECENT ========== */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Quick Actions */}
+          <div className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-[#001B2E] mb-4">
+              Quick Actions
+            </h3>
+            <div className="space-y-3">
+              <button
+                onClick={() => router.push("/admin/loans/request")}
+                className="w-full bg-[#019893] hover:bg-[#017C77] text-white py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                <Banknote size={20} />
+                Request New Loan
+              </button>
+
+              <button
+                onClick={() => setShowDetailsModal(true)}
+                className="w-full bg-white border-2 border-[#019893] text-[#019893] hover:bg-[#E6F8F7] py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                <Briefcase size={20} />
+                Add Business Details
+              </button>
+
+              <button
+                onClick={() => router.push("/admin/loans/history")}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                View Full History
+                <ArrowRight size={18} />
+              </button>
             </div>
-            <button
-              className="text-[#019893] text-base font-medium hover:underline"
-              onClick={() => router.push("/admin/loans/history")}
-            >
-              See All
-            </button>
+
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Info
+                  className="text-blue-600 mt-0.5 flex-shrink-0"
+                  size={16}
+                />
+                <p className="text-xs text-blue-800">
+                  Complete your business details to unlock higher loan limits
+                  and faster approval.
+                </p>
+              </div>
+            </div>
           </div>
 
-          {loading ? (
-            <div className="text-gray-500 text-center py-6 flex items-center justify-center">
-              <Loader2 className="animate-spin mr-2 text-[#019893]" />{" "}
-              Loading...
+          {/* Recent Activity */}
+          <div className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-[#001B2E]">
+                Recent Activity
+              </h3>
+              <button
+                onClick={() => router.push("/admin/loans/history")}
+                className="text-[#019893] text-sm font-medium hover:underline"
+              >
+                See All
+              </button>
             </div>
-          ) : loanHistory.length > 0 ? (
-            <div className="space-y-4">
-              {loanHistory.map((item, index) => (
-                <div
-                  key={item.id || `loan-${index}`}
-                  className="flex items-center justify-between bg-white border border-[#CCEAE9] rounded-xl p-4"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-[#1CC5AE] flex items-center justify-center">
-                      <Wallet size={24} className="text-[#019893]" />
+
+            {recentActivity.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <Wallet size={32} className="mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No recent activity</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentActivity.map((item) => {
+                  const statusConfig = getStatusConfig(item.status, item.type);
+                  return (
+                    <div
+                      key={`${item.type}-${item.id}`}
+                      className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => {
+                        if (item.type === "loan") {
+                          router.push(`/admin/loans/${item.id}`);
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div
+                          className={`p-2 rounded-full ${statusConfig.bgColor}`}
+                        >
+                          {statusConfig.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-[#001B2E] truncate">
+                            {item.type === "loan" ? "Loan" : "Application"}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {formatDate(item.date)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0 ml-2">
+                        <div className="text-sm font-semibold text-[#019893]">
+                          {formatCurrency(item.amount)}
+                        </div>
+                        <div
+                          className={`text-xs font-medium ${statusConfig.color}`}
+                        >
+                          {statusConfig.label}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-[#001B2E] font-medium text-base">
-                        {item.purpose}
-                      </div>
-                      <div className="text-[#019893] font-bold text-lg">
-                        ₦{item.amount}
-                      </div>
-                      <div className="text-gray-400 text-xs">
-                        {formatDate(item.created_at)}
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    className={`font-semibold text-base capitalize ${getStatusColor(
-                      item.status
-                    )}`}
-                  >
-                    {item.status}
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ========== RIGHT COLUMN: LOAN PRODUCTS ========== */}
+        <div className="lg:col-span-2">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-semibold text-[#001B2E]">
+                Available Loan Products
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Choose a product that fits your needs
+              </p>
+            </div>
+          </div>
+
+          {productsLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-10 h-10 animate-spin text-[#019893]" />
+            </div>
+          ) : products.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center">
+              <Wallet
+                size={48}
+                className="mx-auto mb-4 text-gray-300 opacity-50"
+              />
+              <p className="text-gray-500 text-lg font-medium mb-2">
+                No loan products available
+              </p>
+              <p className="text-gray-400 text-sm">
+                Check back later for new offerings
+              </p>
             </div>
           ) : (
-            <div className="text-gray-400 text-center py-6">
-              No loan records found.
+            <div className="grid md:grid-cols-2 gap-6">
+              {products.map((product) => (
+                <div
+                  key={product.id}
+                  className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-[#019893]/10 rounded-lg">
+                        <Wallet className="text-[#019893]" size={22} />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg text-[#001B2E] group-hover:text-[#019893] transition-colors">
+                          {product.name}
+                        </h3>
+                        <span
+                          className={`text-xs font-medium px-2 py-1 rounded-full ${
+                            product.risk_level === "LOW"
+                              ? "bg-green-100 text-green-700"
+                              : product.risk_level === "MEDIUM"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {product.risk_level_display}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mb-5 line-clamp-2">
+                    {product.description}
+                  </p>
+
+                  <div className="space-y-3 mb-5">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Banknote className="text-[#019893]" size={16} />
+                        <span>Loan Range</span>
+                      </div>
+                      <span className="font-semibold text-[#001B2E]">
+                        {formatCurrency(product.min_amount)} -{" "}
+                        {formatCurrency(product.max_amount)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <CalendarDays className="text-[#019893]" size={16} />
+                        <span>Tenure</span>
+                      </div>
+                      <span className="font-semibold text-[#001B2E]">
+                        {product.min_tenure_months} -{" "}
+                        {product.max_tenure_months} months
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Percent className="text-[#019893]" size={16} />
+                        <span>Interest Rate</span>
+                      </div>
+                      <span className="font-semibold text-[#001B2E]">
+                        {(parseFloat(product.interest_rate) * 100).toFixed(2)}%
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <CalendarDays className="text-[#019893]" size={16} />
+                        <span>Repayment</span>
+                      </div>
+                      <span className="font-semibold text-[#001B2E] capitalize">
+                        {product.repayment_frequency.toLowerCase()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      router.push(`/admin/loans/request?product=${product.id}`)
+                    }
+                    className="w-full bg-[#019893] hover:bg-[#017C77] text-white rounded-lg py-3 px-4 font-semibold transition-all flex items-center justify-center gap-2 group-hover:shadow-md"
+                  >
+                    Apply Now
+                    <ArrowRight size={18} />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>
       </div>
 
-      {/* ------------------------------------------------------------- */}
-      {/*                  SECTION 2: LOAN PRODUCTS                    */}
-      {/* ------------------------------------------------------------- */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-[#001B2E]">
-            Available Loan Products
-          </h2>
-        </div>
-
-        {productLoading ? (
-          <div className="flex items-center justify-center py-10 text-gray-500">
-            <Loader2 className="animate-spin mr-2 text-[#019893]" />
-            Loading loan products...
-          </div>
-        ) : loanProducts.length === 0 ? (
-          <p className="text-gray-500 text-center py-6">
-            No loan products available.
-          </p>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {loanProducts.map((loan, idx) => (
-              <div
-                key={loan.id || `loan-prod-${idx}`}
-                className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm hover:shadow-md transition-all"
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <Wallet className="text-[#019893]" size={22} />
-                  <h3 className="font-semibold text-lg text-[#001B2E]">
-                    {loan.name}
-                  </h3>
-                </div>
-                <p className="text-sm text-gray-600 mb-4">{loan.description}</p>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Banknote className="text-[#019893]" size={18} />
-                    <span>
-                      <strong>Max Amount:</strong> ₦
-                      {loan.max_amount?.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="text-[#019893]" size={18} />
-                    <span>
-                      <strong>Tenure:</strong> {loan.max_tenure_months} months
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Percent className="text-[#019893]" size={18} />
-                    <span>
-                      <strong>Interest:</strong>{" "}
-                      {(loan.interest_rate * 100).toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() =>
-                    router.push(`/admin/loans/request?product=${loan.id}`)
-                  }
-                  className="mt-5 w-full bg-[#019893] hover:bg-[#017C77] text-white rounded-lg py-2 font-medium transition-all"
-                >
-                  Apply for this Loan
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ------------------------------------------------------------- */}
-      {/*                      MAIN DETAIL SELECT MODAL                */}
-      {/* ------------------------------------------------------------- */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white/95 backdrop-blur-md w-full max-w-md rounded-2xl shadow-lg p-6 relative">
+      {/* ========== MODALS ========== */}
+      {/* Details Selection Modal */}
+      {showDetailsModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200">
             <button
-              onClick={() => setShowModal(false)}
-              className="absolute top-3 left-3 text-gray-600 hover:text-[#019893] transition"
+              onClick={() => setShowDetailsModal(false)}
+              className="absolute top-4 left-4 text-gray-400 hover:text-[#019893] transition"
             >
               <ArrowLeft className="w-6 h-6" />
             </button>
 
-            <h2 className="text-center text-lg font-semibold text-[#001B2E] mb-4">
-              Choose Detail Type
+            <h2 className="text-center text-xl font-bold text-[#001B2E] mb-6 mt-2">
+              Add Your Details
             </h2>
 
-            <div className="flex flex-col gap-4">
+            <div className="space-y-4">
               <button
                 onClick={() => {
-                  setShowModal(false);
+                  setShowDetailsModal(false);
                   setShowBankModal(true);
                 }}
-                className="flex items-center justify-between border border-[#CCEAE9] rounded-lg p-4 hover:bg-[#E6F8F7] transition-all"
+                className="w-full flex items-center justify-between border-2 border-[#CCEAE9] rounded-xl p-5 hover:border-[#019893] hover:bg-[#E6F8F7] transition-all group"
               >
-                <div className="flex items-center gap-3">
-                  <div className="bg-[#019893]/10 text-[#019893] p-2 rounded-full">
-                    <Landmark className="w-5 h-5" />
+                <div className="flex items-center gap-4">
+                  <div className="bg-[#019893]/10 text-[#019893] p-3 rounded-full group-hover:bg-[#019893] group-hover:text-white transition-colors">
+                    <Landmark className="w-6 h-6" />
                   </div>
-                  <span className="text-[#001B2E] font-medium">
-                    Add Bank Details
-                  </span>
+                  <div className="text-left">
+                    <div className="text-[#001B2E] font-semibold text-base">
+                      Bank Account Details
+                    </div>
+                    <div className="text-gray-500 text-sm">
+                      Add your bank information
+                    </div>
+                  </div>
                 </div>
-                <input type="radio" checked readOnly />
+                <ArrowRight className="text-gray-400 group-hover:text-[#019893] transition-colors" />
               </button>
 
               <button
                 onClick={() => {
-                  setShowModal(false);
+                  setShowDetailsModal(false);
                   setShowBusinessModal(true);
                 }}
-                className="flex items-center justify-between border border-[#CCEAE9] rounded-lg p-4 hover:bg-[#E6F8F7] transition-all"
+                className="w-full flex items-center justify-between border-2 border-[#CCEAE9] rounded-xl p-5 hover:border-[#019893] hover:bg-[#E6F8F7] transition-all group"
               >
-                <div className="flex items-center gap-3">
-                  <div className="bg-[#019893]/10 text-[#019893] p-2 rounded-full">
-                    <Briefcase className="w-5 h-5" />
+                <div className="flex items-center gap-4">
+                  <div className="bg-[#019893]/10 text-[#019893] p-3 rounded-full group-hover:bg-[#019893] group-hover:text-white transition-colors">
+                    <Briefcase className="w-6 h-6" />
                   </div>
-                  <span className="text-[#001B2E] font-medium">
-                    Add Business Details
-                  </span>
+                  <div className="text-left">
+                    <div className="text-[#001B2E] font-semibold text-base">
+                      Business Information
+                    </div>
+                    <div className="text-gray-500 text-sm">
+                      Add your business details
+                    </div>
+                  </div>
                 </div>
-                <input type="radio" readOnly />
+                <ArrowRight className="text-gray-400 group-hover:text-[#019893] transition-colors" />
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ------------------------------------------------------------- */}
-      {/*                       BANK DETAILS MODAL                     */}
-      {/* ------------------------------------------------------------- */}
+      {/* Bank Details Modal */}
       {showBankModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60]">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-lg relative">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setShowBankModal(false)}
-              className="absolute top-3 left-3 text-gray-600 hover:text-[#019893] transition"
+              className="absolute top-4 left-4 text-gray-400 hover:text-[#019893] transition"
             >
               <ArrowLeft className="w-6 h-6" />
             </button>
 
-            <h2 className="text-center text-lg font-semibold text-[#001B2E] mb-4">
-              Add Bank Details
-            </h2>
+            <div className="text-center mb-6 mt-2">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#019893]/10 rounded-full mb-3">
+                <Landmark className="w-8 h-8 text-[#019893]" />
+              </div>
+              <h2 className="text-xl font-bold text-[#001B2E]">
+                Bank Account Details
+              </h2>
+              <p className="text-gray-500 text-sm mt-1">
+                Required for loan disbursement
+              </p>
+            </div>
 
-            <form className="flex flex-col gap-4">
-              <input
-                type="text"
-                placeholder="Bank Name"
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-                className="border p-3 rounded-lg"
-              />
-              <input
-                type="text"
-                placeholder="Account Number"
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value)}
-                className="border p-3 rounded-lg"
-              />
-              <input
-                type="text"
-                placeholder="Account Holder Name"
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-                className="border p-3 rounded-lg"
-              />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveBankDetails();
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Bank Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Access Bank"
+                  value={bankDetails.bank_name}
+                  onChange={(e) =>
+                    setBankDetails({
+                      ...bankDetails,
+                      bank_name: e.target.value,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#019893] focus:border-transparent transition"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Account Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="0123456789"
+                  value={bankDetails.account_number}
+                  onChange={(e) =>
+                    setBankDetails({
+                      ...bankDetails,
+                      account_number: e.target.value,
+                    })
+                  }
+                  maxLength={10}
+                  pattern="[0-9]*"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#019893] focus:border-transparent transition"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Account Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="John Doe"
+                  value={bankDetails.account_name}
+                  onChange={(e) =>
+                    setBankDetails({
+                      ...bankDetails,
+                      account_name: e.target.value,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#019893] focus:border-transparent transition"
+                  required
+                />
+              </div>
 
               <button
-                type="button"
-                onClick={saveBankDetails}
+                type="submit"
                 disabled={savingBank}
-                className="mt-3 w-full bg-[#019893] hover:bg-[#017C77] text-white py-3 rounded-lg font-semibold disabled:opacity-50"
+                className="w-full bg-[#019893] hover:bg-[#017C77] text-white py-3 px-4 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
               >
-                {savingBank ? "Saving..." : "Save Bank Details"}
+                {savingBank ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={20} />
+                    Save Bank Details
+                  </>
+                )}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* ------------------------------------------------------------- */}
-      {/*                    BUSINESS DETAILS MODAL                    */}
-      {/* ------------------------------------------------------------- */}
+      {/* Business Details Modal */}
       {showBusinessModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60]">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-lg relative">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setShowBusinessModal(false)}
-              className="absolute top-3 left-3 text-gray-600 hover:text-[#019893] transition"
+              className="absolute top-4 left-4 text-gray-400 hover:text-[#019893] transition"
             >
               <ArrowLeft className="w-6 h-6" />
             </button>
 
-            <h2 className="text-center text-lg font-semibold text-[#001B2E] mb-4">
-              Add Business Details
-            </h2>
+            <div className="text-center mb-6 mt-2">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#019893]/10 rounded-full mb-3">
+                <Briefcase className="w-8 h-8 text-[#019893]" />
+              </div>
+              <h2 className="text-xl font-bold text-[#001B2E]">
+                Business Information
+              </h2>
+              <p className="text-gray-500 text-sm mt-1">
+                Help us understand your business better
+              </p>
+            </div>
 
-            <form className="flex flex-col gap-4">
-              <input
-                type="text"
-                placeholder="Business Name"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                className="border p-3 rounded-lg"
-              />
-              <input
-                type="text"
-                placeholder="Business Address"
-                value={businessAddress}
-                onChange={(e) => setBusinessAddress(e.target.value)}
-                className="border p-3 rounded-lg"
-              />
-              <input
-                type="text"
-                placeholder="Business Type"
-                value={businessType}
-                onChange={(e) => setBusinessType(e.target.value)}
-                className="border p-3 rounded-lg"
-              />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveBusinessDetails();
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Business Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., ABC Trading Ltd"
+                  value={businessDetails.business_name}
+                  onChange={(e) =>
+                    setBusinessDetails({
+                      ...businessDetails,
+                      business_name: e.target.value,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#019893] focus:border-transparent transition"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Business Address <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  placeholder="Full business address"
+                  value={businessDetails.business_address}
+                  onChange={(e) =>
+                    setBusinessDetails({
+                      ...businessDetails,
+                      business_address: e.target.value,
+                    })
+                  }
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#019893] focus:border-transparent transition resize-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Business Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={businessDetails.business_type}
+                  onChange={(e) =>
+                    setBusinessDetails({
+                      ...businessDetails,
+                      business_type: e.target.value,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#019893] focus:border-transparent transition"
+                  required
+                >
+                  <option value="">Select business type</option>
+                  <option value="sole_proprietorship">
+                    Sole Proprietorship
+                  </option>
+                  <option value="partnership">Partnership</option>
+                  <option value="limited_liability">
+                    Limited Liability Company
+                  </option>
+                  <option value="corporation">Corporation</option>
+                  <option value="cooperative">Cooperative</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
 
               <button
-                type="button"
-                onClick={saveBusinessDetails}
+                type="submit"
                 disabled={savingBusiness}
-                className="mt-3 w-full bg-[#019893] hover:bg-[#017C77] text-white py-3 rounded-lg font-semibold disabled:opacity-50"
+                className="w-full bg-[#019893] hover:bg-[#017C77] text-white py-3 px-4 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
               >
-                {savingBusiness ? "Saving..." : "Save Business Details"}
+                {savingBusiness ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={20} />
+                    Save Business Details
+                  </>
+                )}
               </button>
             </form>
           </div>
