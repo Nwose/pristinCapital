@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import VerificationErrorModal, { VerificationStatus } from "@/components/auth/VerificationErrorModal";
+import VerificationErrorModal, {
+  VerificationStatus,
+} from "@/components/auth/VerificationErrorModal";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/api/auth/authContext";
@@ -13,8 +15,9 @@ import { toast as toastFn } from "react-toastify";
 import { Routes } from "@/lib/api/FrontendRoutes";
 import { FrontendRoutes } from "@/lib/api/FrontendRoutes";
 
-
-function isDetailsObject(details: unknown): details is { detail?: string; message?: string; error?: string } {
+function isDetailsObject(
+  details: unknown
+): details is { detail?: string; message?: string; error?: string } {
   return typeof details === "object" && details !== null;
 }
 
@@ -26,15 +29,14 @@ interface VerificationErrorShape {
   };
 }
 
-export function isAboutResourceVerification(
+function isAboutResourceVerification(
   data: unknown
 ): data is VerificationErrorShape {
   if (
     typeof data === "object" &&
     data !== null &&
     "error" in data &&
-    (data as any).error ===
-    "user email or phone number not verified" &&
+    (data as any).error === "user email or phone number not verified" &&
     "details" in data &&
     typeof (data as any).details === "object" &&
     (data as any).details !== null &&
@@ -49,22 +51,30 @@ export function isAboutResourceVerification(
   return false;
 }
 
-
-
 export default function Login() {
   const router = useRouter();
   const auth = useAuth();
-  const { user, login, isLoading, error, clearError, partialUser, updatePartialUser } = auth;
+  const {
+    user,
+    login,
+    isLoading,
+    error,
+    clearError,
+    partialUser,
+    updatePartialUser,
+  } = auth;
 
   const [email, setEmail] = useState(partialUser?.email || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [showVerificationErrorModal, setShowVerificationErrorModal] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({
-    email_verified: "",
-    phone_number_verified: "",
-  });
+  const [showVerificationErrorModal, setShowVerificationErrorModal] =
+    useState(false);
+  const [verificationStatus, setVerificationStatus] =
+    useState<VerificationStatus>({
+      email_verified: "",
+      phone_number_verified: "",
+    });
 
   // If a tfa flow was started previously, AuthProvider stores the tfa_token in localStorage.
   // We detect that and advise the user to continue on the dedicated 2FA page.
@@ -75,7 +85,8 @@ export default function Login() {
       toastFn.success("User is already logged in, redirecting to dashboard.");
       router.push(FrontendRoutes.dashboard);
     }
-    const t = typeof window !== "undefined" ? localStorage.getItem("tfa_token") : null;
+    const t =
+      typeof window !== "undefined" ? localStorage.getItem("tfa_token") : null;
     const k = t && partialUser?.tfa_token === t;
     setHasTfaToken(Boolean(k));
   }, []);
@@ -86,8 +97,7 @@ export default function Login() {
       let msg: string;
 
       if (error.details && isDetailsObject(error.details)) {
-        msg = (
-          error.details.detail ||
+        msg = (error.details.detail ||
           error.details.message ||
           error.details.error) as string;
         setErrorMsg(msg);
@@ -96,7 +106,6 @@ export default function Login() {
       // do something with msg...
     }
   }, [error]);
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,7 +253,9 @@ export default function Login() {
                   We detected an in-progress two-factor authentication flow.
                   <div className="mt-2">
                     <button
-                      onClick={() => router.push(Routes.loginSecondFactor ?? "/auth/2fa")}
+                      onClick={() =>
+                        router.push(Routes.loginSecondFactor ?? "/auth/2fa")
+                      }
                       className="underline font-medium"
                     >
                       Continue to Two-Factor Authentication
@@ -285,8 +296,11 @@ export default function Login() {
                       value={password}
                       onChange={handlePasswordChange}
                       placeholder="Enter your password"
-                      className={`w-full px-3 sm:px-4 py-3 sm:py-4 border-2 rounded-lg focus:ring-2 focus:ring-teal-200 outline-none transition-all text-gray-700 bg-gray-50 text-sm sm:text-base ${error ? "border-red-500 focus:border-red-500" : "border-teal-500 focus:border-teal-500"
-                        }`}
+                      className={`w-full px-3 sm:px-4 py-3 sm:py-4 border-2 rounded-lg focus:ring-2 focus:ring-teal-200 outline-none transition-all text-gray-700 bg-gray-50 text-sm sm:text-base ${
+                        error
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-teal-500 focus:border-teal-500"
+                      }`}
                     />
                     <button
                       type="button"
@@ -297,14 +311,19 @@ export default function Login() {
                     </button>
                   </div>
 
-                  {error && <p className="text-red-500 text-sm mt-2">{errorMsg}</p>}
+                  {error && (
+                    <p className="text-red-500 text-sm mt-2">{errorMsg}</p>
+                  )}
                 </div>
 
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg transition-colors shadow-lg ${isLoading ? "bg-gray-300 text-gray-500" : "bg-slate-800 hover:bg-slate-900 text-white"
-                    }`}
+                  className={`w-full py-3 sm:py-4 rounded-sm font-semibold text-base sm:text-lg transition-colors shadow-lg ${
+                    isLoading
+                      ? "bg-gray-300 text-gray-500"
+                      : "bg-slate-800 hover:bg-slate-900 text-white"
+                  }`}
                 >
                   {isLoading ? "Logging In..." : "Log In"}
                 </button>
@@ -312,13 +331,29 @@ export default function Login() {
               <div className="text-center mt-6">
                 <p className="text-gray-600 text-sm">
                   Don't have an account?{" "}
-                  <Link href={FrontendRoutes.register} className="text-teal-600 hover:underline font-semibold">
+                  <Link
+                    href={FrontendRoutes.register}
+                    className="text-teal-600 hover:underline font-semibold"
+                  >
                     Create an account
                   </Link>
                 </p>
                 <p className="text-center text-gray-400 text-sm mt-4">
-                  <Link href={FrontendRoutes.verifyEmailOTP} className="text-teal-600 cursor-pointer hover:underline font-semibold transition-colors"> Verify Email </Link> |
-                  <Link href={FrontendRoutes.verifyPhoneOTP} className="text-teal-600 cursor-pointer hover:underline font-semibold transition-colors"> Verify Phone </Link>
+                  <Link
+                    href={FrontendRoutes.verifyEmailOTP}
+                    className="text-teal-600 cursor-pointer hover:underline font-semibold transition-colors"
+                  >
+                    {" "}
+                    Verify Email{" "}
+                  </Link>{" "}
+                  |
+                  <Link
+                    href={FrontendRoutes.verifyPhoneOTP}
+                    className="text-teal-600 cursor-pointer hover:underline font-semibold transition-colors"
+                  >
+                    {" "}
+                    Verify Phone{" "}
+                  </Link>
                 </p>
 
                 {/* <div className="mt-4">
