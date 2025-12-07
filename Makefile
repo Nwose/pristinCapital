@@ -1,9 +1,9 @@
 install:
 	@echo "Installing the application..."
-	bun install
+	npm install
 
 runserver:
-	bun run dev
+	npm run dev
 
 diff:
 	git add -N .
