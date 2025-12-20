@@ -12,6 +12,7 @@ import {
   type Loan,
   type LoanApplication,
   type LoanProduct,
+  type LoanRepayment,
   type PaginatedLoans,
   type PaginatedLoanApplications,
   type PaginatedLoanProducts,
@@ -34,6 +35,14 @@ import {
   ArrowRight,
   RefreshCw,
   Info,
+  ChevronDown,
+  ChevronUp,
+  DollarSign,
+  Calendar,
+  FileText,
+  CreditCard,
+  PieChart,
+  TrendingDown,
 } from "lucide-react";
 
 /* ==================== TYPES ==================== */
@@ -44,6 +53,8 @@ interface LoanSummary {
   activeLoans: number;
   pendingApplications: number;
   overdueCount: number;
+  nextPaymentAmount: string;
+  nextPaymentDate: string | null;
 }
 
 interface BankDetails {
@@ -91,9 +102,18 @@ const formatDateTime = (dateString: string): string => {
   }
 };
 
+const getDaysUntil = (dateString: string): number => {
+  const targetDate = new Date(dateString);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  targetDate.setHours(0, 0, 0, 0);
+  const diffTime = targetDate.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
 /* ==================== MAIN COMPONENT ==================== */
 export default function LoansPage() {
-  const { user } = useAuth();
+  const { user, doAuthCheck } = useAuth();
   const router = useRouter();
 
   /* ========== STATE MANAGEMENT ========== */
@@ -107,6 +127,8 @@ export default function LoansPage() {
   const [refreshing, setRefreshing] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+  const [expandedLoan, setExpandedLoan] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState<"overview" | "loans" | "applications">("overview");
 
   /* ========== MODALS ========== */
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -126,13 +148,6 @@ export default function LoansPage() {
   });
   const [savingBank, setSavingBank] = useState(false);
   const [savingBusiness, setSavingBusiness] = useState(false);
-
-  /* ========== AUTH CHECK ========== */
-  useEffect(() => {
-    if (!authUtils.isAuthenticated() || !user) {
-      router.push(FrontendRoutes.login);
-    }
-  }, [user, router]);
 
   /* ========== DATA FETCHING ========== */
   useEffect(() => {
@@ -229,6 +244,29 @@ export default function LoansPage() {
       return loan.repayments?.some((r) => r.status === "OVERDUE");
     }).length;
 
+    // Find next payment
+    let nextPaymentAmount = "0";
+    let nextPaymentDate: string | null = null;
+
+    activeLoans.forEach((loan) => {
+      const pendingRepayments = loan.repayments?.filter(
+        (r) => r.status === "PENDING" || r.status === "OVERDUE"
+      );
+      if (pendingRepayments && pendingRepayments.length > 0) {
+        const nextRepayment = pendingRepayments.sort(
+          (a, b) =>
+            new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+        )[0];
+        if (
+          !nextPaymentDate ||
+          new Date(nextRepayment.due_date) < new Date(nextPaymentDate)
+        ) {
+          nextPaymentDate = nextRepayment.due_date;
+          nextPaymentAmount = nextRepayment.amount_due;
+        }
+      }
+    });
+
     return {
       totalActive: activeLoans.length,
       totalDebt: totalDebt.toFixed(2),
@@ -236,6 +274,8 @@ export default function LoansPage() {
       activeLoans: activeLoans.length,
       pendingApplications: pendingApps.length,
       overdueCount,
+      nextPaymentAmount,
+      nextPaymentDate,
     };
   }, [loans, applications]);
 
@@ -264,6 +304,14 @@ export default function LoansPage() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5);
   }, [loans, applications]);
+
+  const activeLoans = useMemo(() => {
+    return loans.filter((l) => l.status === "ACTIVE" || l.status === "UNDISBURSED");
+  }, [loans]);
+
+  const pendingApplications = useMemo(() => {
+    return applications.filter((a) => a.status === "PENDING");
+  }, [applications]);
 
   /* ========== STATUS HELPERS ========== */
   const getStatusConfig = (
@@ -308,7 +356,6 @@ export default function LoansPage() {
       }
     }
 
-    // Loan status
     switch (status) {
       case "ACTIVE":
         return {
@@ -355,6 +402,19 @@ export default function LoansPage() {
     }
   };
 
+  const getRepaymentStatusColor = (status: string) => {
+    switch (status) {
+      case "PAID":
+        return "text-green-600 bg-green-50";
+      case "OVERDUE":
+        return "text-red-600 bg-red-50";
+      case "PENDING":
+        return "text-yellow-600 bg-yellow-50";
+      default:
+        return "text-gray-600 bg-gray-50";
+    }
+  };
+
   /* ========== SAVE HANDLERS ========== */
   const saveBankDetails = async () => {
     if (
@@ -369,7 +429,6 @@ export default function LoansPage() {
     try {
       setSavingBank(true);
 
-      // Using the makeRequest pattern from original code
       const response = await fetch("/api/v1/bank-details/", {
         method: "POST",
         headers: {
@@ -485,6 +544,67 @@ export default function LoansPage() {
         </div>
       )}
 
+      {/* ========== NEXT PAYMENT ALERT ========== */}
+      {summary.nextPaymentDate && (
+        <div className={`border-2 rounded-xl p-4 ${
+          getDaysUntil(summary.nextPaymentDate) < 0
+            ? "bg-red-50 border-red-300"
+            : getDaysUntil(summary.nextPaymentDate) <= 7
+            ? "bg-yellow-50 border-yellow-300"
+            : "bg-blue-50 border-blue-300"
+        }`}>
+          <div className="flex items-start gap-3">
+            <div className={`p-2 rounded-full ${
+              getDaysUntil(summary.nextPaymentDate) < 0
+                ? "bg-red-100"
+                : getDaysUntil(summary.nextPaymentDate) <= 7
+                ? "bg-yellow-100"
+                : "bg-blue-100"
+            }`}>
+              <Calendar className={
+                getDaysUntil(summary.nextPaymentDate) < 0
+                  ? "text-red-600"
+                  : getDaysUntil(summary.nextPaymentDate) <= 7
+                  ? "text-yellow-600"
+                  : "text-blue-600"
+              } size={20} />
+            </div>
+            <div className="flex-1">
+              <h3 className={`font-semibold text-sm ${
+                getDaysUntil(summary.nextPaymentDate) < 0
+                  ? "text-red-800"
+                  : getDaysUntil(summary.nextPaymentDate) <= 7
+                  ? "text-yellow-800"
+                  : "text-blue-800"
+              }`}>
+                {getDaysUntil(summary.nextPaymentDate) < 0
+                  ? "⚠️ Overdue Payment"
+                  : getDaysUntil(summary.nextPaymentDate) === 0
+                  ? "📢 Payment Due Today"
+                  : getDaysUntil(summary.nextPaymentDate) <= 7
+                  ? "⏰ Upcoming Payment"
+                  : "📅 Next Payment Scheduled"}
+              </h3>
+              <p className={`text-sm mt-1 ${
+                getDaysUntil(summary.nextPaymentDate) < 0
+                  ? "text-red-700"
+                  : getDaysUntil(summary.nextPaymentDate) <= 7
+                  ? "text-yellow-700"
+                  : "text-blue-700"
+              }`}>
+                {formatCurrency(summary.nextPaymentAmount)} due on{" "}
+                {formatDate(summary.nextPaymentDate)}
+                {getDaysUntil(summary.nextPaymentDate) >= 0 && (
+                  <span className="font-medium">
+                    {" "}({getDaysUntil(summary.nextPaymentDate)} day{getDaysUntil(summary.nextPaymentDate) !== 1 && "s"} remaining)
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ========== SUMMARY CARDS ========== */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-gradient-to-br from-[#019893] to-[#017C77] text-white rounded-2xl p-6 shadow-lg">
@@ -532,7 +652,7 @@ export default function LoansPage() {
 
         <div className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <TrendingUp size={24} className="text-blue-600" />
+            <PieChart size={24} className="text-blue-600" />
           </div>
           <div className="text-2xl font-bold text-[#001B2E] mb-1">
             {loans.length}
@@ -545,251 +665,663 @@ export default function LoansPage() {
         </div>
       </div>
 
-      {/* ========== MAIN CONTENT GRID ========== */}
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* ========== LEFT COLUMN: ACTIONS + RECENT ========== */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Quick Actions */}
-          <div className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-[#001B2E] mb-4">
-              Quick Actions
-            </h3>
-            <div className="space-y-3">
-              <button
-                onClick={() => router.push("/admin/loans/request")}
-                className="w-full bg-[#019893] hover:bg-[#017C77] text-white py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-              >
-                <Banknote size={20} />
-                Request New Loan
-              </button>
+      {/* ========== TABS ========== */}
+      <div className="border-b border-gray-200">
+        <div className="flex gap-4">
+          <button
+            onClick={() => setSelectedTab("overview")}
+            className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
+              selectedTab === "overview"
+                ? "border-[#019893] text-[#019893]"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setSelectedTab("loans")}
+            className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
+              selectedTab === "loans"
+                ? "border-[#019893] text-[#019893]"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            My Loans ({activeLoans.length})
+          </button>
+          <button
+            onClick={() => setSelectedTab("applications")}
+            className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
+              selectedTab === "applications"
+                ? "border-[#019893] text-[#019893]"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Applications ({applications.length})
+          </button>
+        </div>
+      </div>
 
-              <button
-                onClick={() => setShowDetailsModal(true)}
-                className="w-full bg-white border-2 border-[#019893] text-[#019893] hover:bg-[#E6F8F7] py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-              >
-                <Briefcase size={20} />
-                Add Business Details
-              </button>
+      {/* ========== TAB CONTENT ========== */}
+      {selectedTab === "overview" && (
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* LEFT COLUMN: ACTIONS + RECENT */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Quick Actions */}
+            <div className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-[#001B2E] mb-4">
+                Quick Actions
+              </h3>
+              <div className="space-y-3">
+                <button
+                  onClick={() => router.push("/dashboard/loans/request")}
+                  className="w-full bg-[#019893] hover:bg-[#017C77] text-white py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+                >
+                  <Banknote size={20} />
+                  Request New Loan
+                </button>
 
-              <button
-                onClick={() => router.push("/admin/loans/history")}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-              >
-                View Full History
-                <ArrowRight size={18} />
-              </button>
+                <button
+                  onClick={() => setShowDetailsModal(true)}
+                  className="w-full bg-white border-2 border-[#019893] text-[#019893] hover:bg-[#E6F8F7] py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+                >
+                  <Briefcase size={20} />
+                  Add Business Details
+                </button>
+
+                <button
+                  onClick={() => router.push("/dashboard/loans/history")}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+                >
+                  View Full History
+                  <ArrowRight size={18} />
+                </button>
+              </div>
+
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Info
+                    className="text-blue-600 mt-0.5 flex-shrink-0"
+                    size={16}
+                  />
+                  <p className="text-xs text-blue-800">
+                    Complete your business details to unlock higher loan limits
+                    and faster approval.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-start gap-2">
-                <Info
-                  className="text-blue-600 mt-0.5 flex-shrink-0"
-                  size={16}
-                />
-                <p className="text-xs text-blue-800">
-                  Complete your business details to unlock higher loan limits
-                  and faster approval.
-                </p>
+            {/* Recent Activity */}
+            <div className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-[#001B2E]">
+                  Recent Activity
+                </h3>
+                <button
+                  onClick={() => router.push("/dashboard/loans/history")}
+                  className="text-[#019893] text-sm font-medium hover:underline"
+                >
+                  See All
+                </button>
               </div>
+
+              {recentActivity.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <Wallet size={32} className="mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No recent activity</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentActivity.map((item) => {
+                    const statusConfig = getStatusConfig(item.status, item.type);
+                    return (
+                      <div
+                        key={`${item.type}-${item.id}`}
+                        className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          if (item.type === "loan") {
+                            setSelectedTab("loans");
+                            setExpandedLoan(item.id);
+                          } else {
+                            setSelectedTab("applications");
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div
+                            className={`p-2 rounded-full ${statusConfig.bgColor}`}
+                          >
+                            {statusConfig.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-[#001B2E] truncate">
+                              {item.type === "loan" ? "Loan" : "Application"}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {formatDate(item.date)}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0 ml-2">
+                          <div className="text-sm font-semibold text-[#019893]">
+                            {formatCurrency(item.amount)}
+                          </div>
+                          <div
+                            className={`text-xs font-medium ${statusConfig.color}`}
+                          >
+                            {statusConfig.label}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Recent Activity */}
-          <div className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-[#001B2E]">
-                Recent Activity
-              </h3>
-              <button
-                onClick={() => router.push("/admin/loans/history")}
-                className="text-[#019893] text-sm font-medium hover:underline"
-              >
-                See All
-              </button>
+          {/* RIGHT COLUMN: LOAN PRODUCTS */}
+          <div className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-[#001B2E]">
+                  Available Loan Products
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Choose a product that fits your needs
+                </p>
+              </div>
             </div>
 
-            {recentActivity.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                <Wallet size={32} className="mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No recent activity</p>
+            {productsLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-10 h-10 animate-spin text-[#019893]" />
+              </div>
+            ) : products.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center">
+                <Wallet
+                  size={48}
+                  className="mx-auto mb-4 text-gray-300 opacity-50"
+                />
+                <p className="text-gray-500 text-lg font-medium mb-2">
+                  No loan products available
+                </p>
+                <p className="text-gray-400 text-sm">
+                  Check back later for new offerings
+                </p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {recentActivity.map((item) => {
-                  const statusConfig = getStatusConfig(item.status, item.type);
-                  return (
-                    <div
-                      key={`${item.type}-${item.id}`}
-                      className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => {
-                        if (item.type === "loan") {
-                          router.push(`/admin/loans/${item.id}`);
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div
-                          className={`p-2 rounded-full ${statusConfig.bgColor}`}
-                        >
-                          {statusConfig.icon}
+              <div className="grid md:grid-cols-2 gap-6">
+                {products.map((product) => (
+                  <div
+                    key={product.id}
+                    className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-[#019893]/10 rounded-lg">
+                          <Wallet className="text-[#019893]" size={22} />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[#001B2E] truncate">
-                            {item.type === "loan" ? "Loan" : "Application"}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {formatDate(item.date)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0 ml-2">
-                        <div className="text-sm font-semibold text-[#019893]">
-                          {formatCurrency(item.amount)}
-                        </div>
-                        <div
-                          className={`text-xs font-medium ${statusConfig.color}`}
-                        >
-                          {statusConfig.label}
+                        <div>
+                          <h3 className="font-semibold text-lg text-[#001B2E] group-hover:text-[#019893] transition-colors">
+                            {product.name}
+                          </h3>
+                          <span
+                            className={`text-xs font-medium px-2 py-1 rounded-full ${
+                              product.risk_level === "LOW"
+                                ? "bg-green-100 text-green-700"
+                                : product.risk_level === "MEDIUM"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {product.risk_level_display}
+                          </span>
                         </div>
                       </div>
                     </div>
-                  );
-                })}
+
+                    <p className="text-sm text-gray-600 mb-5 line-clamp-2">
+                      {product.description}
+                    </p>
+
+                    <div className="space-y-3 mb-5">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Banknote className="text-[#019893]" size={16} />
+                          <span>Loan Range</span>
+                        </div>
+                        <span className="font-semibold text-[#001B2E]">
+                          {formatCurrency(product.min_amount)} -{" "}
+                          {formatCurrency(product.max_amount)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <CalendarDays className="text-[#019893]" size={16} />
+                          <span>Tenure</span>
+                        </div>
+                        <span className="font-semibold text-[#001B2E]">
+                          {product.min_tenure_months} -{" "}
+                          {product.max_tenure_months} months
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Percent className="text-[#019893]" size={16} />
+                          <span>Interest Rate</span>
+                        </div>
+                        <span className="font-semibold text-[#001B2E]">
+                          {(parseFloat(product.interest_rate) * 100).toFixed(2)}%
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <CalendarDays className="text-[#019893]" size={16} />
+                          <span>Repayment</span>
+                        </div>
+                        <span className="font-semibold text-[#001B2E] capitalize">
+                          {product.repayment_frequency.toLowerCase()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() =>
+                        router.push(`/dashboard/loans/request?product=${product.id}`)
+                      }
+                      className="w-full bg-[#019893] hover:bg-[#017C77] text-white rounded-lg py-3 px-4 font-semibold transition-all flex items-center justify-center gap-2 group-hover:shadow-md"
+                    >
+                      Apply Now
+                      <ArrowRight size={18} />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
         </div>
+      )}
 
-        {/* ========== RIGHT COLUMN: LOAN PRODUCTS ========== */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-semibold text-[#001B2E]">
-                Available Loan Products
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Choose a product that fits your needs
-              </p>
-            </div>
-          </div>
-
-          {productsLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-10 h-10 animate-spin text-[#019893]" />
-            </div>
-          ) : products.length === 0 ? (
+      {/* ========== MY LOANS TAB ========== */}
+      {selectedTab === "loans" && (
+        <div className="space-y-6">
+          {activeLoans.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center">
               <Wallet
                 size={48}
                 className="mx-auto mb-4 text-gray-300 opacity-50"
               />
               <p className="text-gray-500 text-lg font-medium mb-2">
-                No loan products available
+                No active loans
               </p>
-              <p className="text-gray-400 text-sm">
-                Check back later for new offerings
+              <p className="text-gray-400 text-sm mb-6">
+                Apply for a loan to get started
               </p>
+              <button
+                onClick={() => router.push("/dashboard/loans/request")}
+                className="bg-[#019893] hover:bg-[#017C77] text-white py-2 px-6 rounded-lg font-semibold transition-all inline-flex items-center gap-2"
+              >
+                <Banknote size={18} />
+                Request Loan
+              </button>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-6">
-              {products.map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-[#019893]/10 rounded-lg">
-                        <Wallet className="text-[#019893]" size={22} />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg text-[#001B2E] group-hover:text-[#019893] transition-colors">
-                          {product.name}
-                        </h3>
-                        <span
-                          className={`text-xs font-medium px-2 py-1 rounded-full ${
-                            product.risk_level === "LOW"
-                              ? "bg-green-100 text-green-700"
-                              : product.risk_level === "MEDIUM"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {product.risk_level_display}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+            <div className="space-y-4">
+              {activeLoans.map((loan) => {
+                const isExpanded = expandedLoan === loan.id;
+                const statusConfig = getStatusConfig(loan.status, "loan");
+                const progress = parseFloat(loan.progress || "0");
 
-                  <p className="text-sm text-gray-600 mb-5 line-clamp-2">
-                    {product.description}
-                  </p>
-
-                  <div className="space-y-3 mb-5">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Banknote className="text-[#019893]" size={16} />
-                        <span>Loan Range</span>
-                      </div>
-                      <span className="font-semibold text-[#001B2E]">
-                        {formatCurrency(product.min_amount)} -{" "}
-                        {formatCurrency(product.max_amount)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <CalendarDays className="text-[#019893]" size={16} />
-                        <span>Tenure</span>
-                      </div>
-                      <span className="font-semibold text-[#001B2E]">
-                        {product.min_tenure_months} -{" "}
-                        {product.max_tenure_months} months
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Percent className="text-[#019893]" size={16} />
-                        <span>Interest Rate</span>
-                      </div>
-                      <span className="font-semibold text-[#001B2E]">
-                        {(parseFloat(product.interest_rate) * 100).toFixed(2)}%
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <CalendarDays className="text-[#019893]" size={16} />
-                        <span>Repayment</span>
-                      </div>
-                      <span className="font-semibold text-[#001B2E] capitalize">
-                        {product.repayment_frequency.toLowerCase()}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() =>
-                      router.push(`/admin/loans/request?product=${product.id}`)
-                    }
-                    className="w-full bg-[#019893] hover:bg-[#017C77] text-white rounded-lg py-3 px-4 font-semibold transition-all flex items-center justify-center gap-2 group-hover:shadow-md"
+                return (
+                  <div
+                    key={loan.id}
+                    className="bg-white border border-[#CCEAE9] rounded-2xl shadow-sm overflow-hidden"
                   >
-                    Apply Now
-                    <ArrowRight size={18} />
-                  </button>
-                </div>
-              ))}
+                    {/* Loan Header */}
+                    <div
+                      className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() =>
+                        setExpandedLoan(isExpanded ? null : loan.id)
+                      }
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-lg font-semibold text-[#001B2E]">
+                              Loan #{loan.id.slice(0, 8)}
+                            </h3>
+                            <span
+                              className={`text-xs font-medium px-2 py-1 rounded-full ${statusConfig.bgColor} ${statusConfig.color} flex items-center gap-1`}
+                            >
+                              {statusConfig.icon}
+                              {statusConfig.label}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">
+                                Principal
+                              </p>
+                              <p className="text-sm font-semibold text-[#001B2E]">
+                                {formatCurrency(loan.principal_amount)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">
+                                Remaining
+                              </p>
+                              <p className="text-sm font-semibold text-[#019893]">
+                                {formatCurrency(loan.remaining_balance)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">
+                                Interest Rate
+                              </p>
+                              <p className="text-sm font-semibold text-[#001B2E]">
+                                {(parseFloat(loan.interest_rate) * 100).toFixed(
+                                  2
+                                )}
+                                %
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">
+                                End Date
+                              </p>
+                              <p className="text-sm font-semibold text-[#001B2E]">
+                                {formatDate(loan.end_date)}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Progress Bar */}
+                          <div className="mt-4">
+                            <div className="flex justify-between text-xs text-gray-600 mb-1">
+                              <span>Repayment Progress</span>
+                              <span className="font-medium">
+                                {progress.toFixed(1)}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-[#019893] h-2 rounded-full transition-all"
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <button className="ml-4">
+                          {isExpanded ? (
+                            <ChevronUp className="text-gray-400" size={24} />
+                          ) : (
+                            <ChevronDown className="text-gray-400" size={24} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Expanded Details */}
+                    {isExpanded && (
+                      <div className="border-t border-gray-200 p-6 bg-gray-50">
+                        <h4 className="font-semibold text-[#001B2E] mb-4 flex items-center gap-2">
+                          <CreditCard size={18} />
+                          Repayment Schedule
+                        </h4>
+
+                        {loan.repayments && loan.repayments.length > 0 ? (
+                          <div className="space-y-2">
+                            {loan.repayments.map((repayment) => (
+                              <div
+                                key={repayment.id}
+                                className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between"
+                              >
+                                <div className="flex items-center gap-4 flex-1">
+                                  <div
+                                    className={`p-2 rounded-full ${getRepaymentStatusColor(
+                                      repayment.status
+                                    )}`}
+                                  >
+                                    {repayment.status === "PAID" ? (
+                                      <CheckCircle2 size={18} />
+                                    ) : repayment.status === "OVERDUE" ? (
+                                      <AlertCircle size={18} />
+                                    ) : (
+                                      <Clock size={18} />
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-medium text-[#001B2E]">
+                                        {formatDate(repayment.due_date)}
+                                      </span>
+                                      {repayment.status === "OVERDUE" && (
+                                        <span className="text-xs text-red-600 font-medium">
+                                          (Overdue by{" "}
+                                          {Math.abs(
+                                            getDaysUntil(repayment.due_date)
+                                          )}{" "}
+                                          days)
+                                        </span>
+                                      )}
+                                      {repayment.status === "PENDING" &&
+                                        getDaysUntil(repayment.due_date) <= 7 &&
+                                        getDaysUntil(repayment.due_date) >= 0 && (
+                                          <span className="text-xs text-yellow-600 font-medium">
+                                            (Due in{" "}
+                                            {getDaysUntil(repayment.due_date)}{" "}
+                                            days)
+                                          </span>
+                                        )}
+                                    </div>
+                                    {repayment.paid_at && (
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        Paid on {formatDate(repayment.paid_at)}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm font-semibold text-[#001B2E]">
+                                    {formatCurrency(repayment.amount_due)}
+                                  </p>
+                                  {repayment.status === "PAID" && (
+                                    <p className="text-xs text-green-600 mt-1">
+                                      Paid: {formatCurrency(repayment.amount_paid)}
+                                    </p>
+                                  )}
+                                  <span
+                                    className={`text-xs font-medium mt-1 inline-block ${getRepaymentStatusColor(
+                                      repayment.status
+                                    )} px-2 py-1 rounded-full`}
+                                  >
+                                    {repayment.status_display}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 text-center py-4">
+                            No repayment schedule available
+                          </p>
+                        )}
+
+                        {/* Loan Details */}
+                        <div className="mt-6 pt-6 border-t border-gray-200">
+                          <h4 className="font-semibold text-[#001B2E] mb-3 flex items-center gap-2">
+                            <FileText size={18} />
+                            Loan Details
+                          </h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">
+                                Total Payable
+                              </p>
+                              <p className="text-sm font-semibold text-[#001B2E]">
+                                {formatCurrency(loan.total_payable)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">
+                                Total Interest
+                              </p>
+                              <p className="text-sm font-semibold text-[#001B2E]">
+                                {formatCurrency(loan.total_interest)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">
+                                Start Date
+                              </p>
+                              <p className="text-sm font-semibold text-[#001B2E]">
+                                {formatDate(loan.start_date)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">
+                                Tenure
+                              </p>
+                              <p className="text-sm font-semibold text-[#001B2E]">
+                                {loan.tenure_months} months
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
-      </div>
+      )}
+
+      {/* ========== APPLICATIONS TAB ========== */}
+      {selectedTab === "applications" && (
+        <div className="space-y-6">
+          {applications.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center">
+              <FileText
+                size={48}
+                className="mx-auto mb-4 text-gray-300 opacity-50"
+              />
+              <p className="text-gray-500 text-lg font-medium mb-2">
+                No loan applications
+              </p>
+              <p className="text-gray-400 text-sm mb-6">
+                Start your first application today
+              </p>
+              <button
+                onClick={() => router.push("/dashboard/loans/request")}
+                className="bg-[#019893] hover:bg-[#017C77] text-white py-2 px-6 rounded-lg font-semibold transition-all inline-flex items-center gap-2"
+              >
+                <Banknote size={18} />
+                Apply Now
+              </button>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              {applications.map((application) => {
+                const statusConfig = getStatusConfig(
+                  application.status,
+                  "application"
+                );
+
+                return (
+                  <div
+                    key={application.id}
+                    className="bg-white border border-[#CCEAE9] rounded-2xl p-6 shadow-sm hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-[#019893]/10 rounded-lg">
+                          <FileText className="text-[#019893]" size={20} />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-[#001B2E]">
+                            {application.product.name}
+                          </h3>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Applied on {formatDate(application.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs font-medium px-2 py-1 rounded-full ${statusConfig.bgColor} ${statusConfig.color} flex items-center gap-1`}
+                      >
+                        {statusConfig.icon}
+                        {statusConfig.label}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Amount Requested</span>
+                        <span className="font-semibold text-[#001B2E]">
+                          {formatCurrency(application.amount_requested)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Tenure</span>
+                        <span className="font-semibold text-[#001B2E]">
+                          {application.tenure_months} months
+                        </span>
+                      </div>
+                      {application.reason && (
+                        <div className="pt-3 border-t border-gray-100">
+                          <p className="text-xs text-gray-500 mb-1">Reason</p>
+                          <p className="text-sm text-gray-700">
+                            {application.reason}
+                          </p>
+                        </div>
+                      )}
+                      {application.status === "REJECTED" &&
+                        application.rejection_reason && (
+                          <div className="pt-3 border-t border-gray-100">
+                            <p className="text-xs text-red-600 mb-1 font-medium">
+                              Rejection Reason
+                            </p>
+                            <p className="text-sm text-red-700">
+                              {application.rejection_reason}
+                            </p>
+                          </div>
+                        )}
+                    </div>
+
+                    {application.status === "APPROVED" && (
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <p className="text-xs text-green-600 font-medium mb-2">
+                          ✓ Your application has been approved!
+                        </p>
+                        <button
+                          onClick={() => setSelectedTab("loans")}
+                          className="text-sm text-[#019893] hover:underline font-medium"
+                        >
+                          View your loan →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ========== MODALS ========== */}
       {/* Details Selection Modal */}
       {showDetailsModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
             <button
               onClick={() => setShowDetailsModal(false)}
               className="absolute top-4 left-4 text-gray-400 hover:text-[#019893] transition"
@@ -855,7 +1387,7 @@ export default function LoansPage() {
       {/* Bank Details Modal */}
       {showBankModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
             <button
               onClick={() => setShowBankModal(false)}
               className="absolute top-4 left-4 text-gray-400 hover:text-[#019893] transition"
@@ -875,13 +1407,7 @@ export default function LoansPage() {
               </p>
             </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                saveBankDetails();
-              }}
-              className="space-y-4"
-            >
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Bank Name <span className="text-red-500">*</span>
@@ -942,7 +1468,7 @@ export default function LoansPage() {
               </div>
 
               <button
-                type="submit"
+                onClick={saveBankDetails}
                 disabled={savingBank}
                 className="w-full bg-[#019893] hover:bg-[#017C77] text-white py-3 px-4 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
               >
@@ -958,7 +1484,7 @@ export default function LoansPage() {
                   </>
                 )}
               </button>
-            </form>
+            </div>
           </div>
         </div>
       )}
@@ -966,7 +1492,7 @@ export default function LoansPage() {
       {/* Business Details Modal */}
       {showBusinessModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
             <button
               onClick={() => setShowBusinessModal(false)}
               className="absolute top-4 left-4 text-gray-400 hover:text-[#019893] transition"
@@ -986,13 +1512,7 @@ export default function LoansPage() {
               </p>
             </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                saveBusinessDetails();
-              }}
-              className="space-y-4"
-            >
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Business Name <span className="text-red-500">*</span>
@@ -1061,7 +1581,7 @@ export default function LoansPage() {
               </div>
 
               <button
-                type="submit"
+                onClick={saveBusinessDetails}
                 disabled={savingBusiness}
                 className="w-full bg-[#019893] hover:bg-[#017C77] text-white py-3 px-4 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
               >
@@ -1077,7 +1597,7 @@ export default function LoansPage() {
                   </>
                 )}
               </button>
-            </form>
+            </div>
           </div>
         </div>
       )}

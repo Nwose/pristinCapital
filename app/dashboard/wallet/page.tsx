@@ -13,7 +13,7 @@ import { Check, Copy, AlertCircle, ArrowUpRight, ArrowDownLeft, ShieldAlert, Loc
 
 export default function WalletPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, doAuthCheck } = useAuth();
   const [tab, setTab] = useState<"fund" | "withdraw">("fund");
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -32,8 +32,10 @@ export default function WalletPage() {
   const hasDVA = user?.paystack_dva_account_number;
 
   useEffect(() => {
-    loadWalletData();
-  }, []);
+    if (user){
+      loadWalletData();
+    }
+  }, [user]);
 
   const loadMyBanks = () => {
     BankService.getBanks().then((banks) => {

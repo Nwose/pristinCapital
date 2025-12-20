@@ -16,7 +16,7 @@ export default function DashboardLayout({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
-  const { user, fetchCurrentUser } = useAuth();
+  const { user, fetchCurrentUser, doAuthCheck } = useAuth();
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -36,12 +36,12 @@ export default function DashboardLayout({
   }, []);
 
   useEffect(()=>{
-    if (!authUtils.isAuthenticated()){
-      router.push(FrontendRoutes.login);
-    }else{
+    doAuthCheck();
+    if (user){
       fetchCurrentUser();  // fetch non blockingly
     }
   }, []);
+  //}, [user]);  // puting user here causes an infinite loop
 
   return (
     <>

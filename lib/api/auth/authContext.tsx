@@ -14,6 +14,7 @@ import React, {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { Routes } from "../FrontendRoutes";
@@ -125,6 +126,7 @@ export interface AuthContextType {
   fetchCurrentUser: () => Promise<void>;
   clearError: () => void;
   updatePartialUser: (partialUser: PartialUser) => void;
+  doAuthCheck: () => Promise<void>;
 }
 
 // Create context
@@ -210,6 +212,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       setLoading(false);
     }
   };
+
+  const doAuthCheck = async () => {
+    const next = `${Routes.login}?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    if (!authUtils.isAuthenticated() && !isLoading) {
+      router.replace(next);
+    }
+  }
 
   /**
    * Fetch current user data
@@ -382,6 +391,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     clearError,
     partialUser,
     updatePartialUser,
+    doAuthCheck,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
