@@ -7,6 +7,7 @@ import { TierUpgradeProvider } from "@/lib/api/contexts/TierUpgradeContext";
 import UpdateTierModal from "@/components/kyc/UpdateTierModal";
 import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
+import GlobalLoader from "@/components/GlobalLoader";
 
 export const metadata: Metadata = {
   title: "Pristin Capital",
@@ -52,6 +53,7 @@ export default function RootLayout({
           draggable
           theme="colored" // 👈 gives nice visual feedback (green/red backgrounds)
         />
+        <GlobalLoader />
       </body>
     </html>
   );

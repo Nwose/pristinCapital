@@ -1,3 +1,5 @@
+import { getWalletTransactions } from "@/services/wallet.service";
+
 export const baseURL = "";
 
 export const BackendRoutes = {
@@ -97,4 +99,9 @@ export const BackendRoutes = {
   cancelDisbursement: (id: string) => `/disbursements/${id}/cancel/`,   // POST cancel
   bulkProcessDisbursement: "/disbursements/bulk-process/", // POST bulk process
   getDisbursementStatistics: "/disbursements/statistics/", // GET statistics
+
+  /* ----------------------------- TRANSACTIONS ----------------------------- */
+  getMyTransactions: "/transactions/",
+  getTransactionDetail: (id: string) => `/transactions/${id}/`,
+  getTransactionStatistics: "/transactions/statistics/",
 };

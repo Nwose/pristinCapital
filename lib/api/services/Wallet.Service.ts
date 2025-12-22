@@ -1,6 +1,5 @@
 import { apiClient } from "../ApiClient";
 import { BackendRoutes } from "../BackendRoutes";
-import { ApiResponse } from "../ApiClient"; 
 
 export interface Wallet {
   wallet_name: string;
