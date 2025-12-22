@@ -40,22 +40,22 @@ const StatsCard: React.FC<{
   trend?: 'up' | 'down' | 'neutral';
   colorClass: string;
 }> = ({ title, value, subtitle, icon, trend, colorClass }) => (
-  <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-slate-600 transition-all">
+  <div className="bg-white rounded-xl p-6 border border-gray-200 hover:border-gray-300 transition-all ">
     <div className="flex items-start justify-between mb-4">
       <div className={`p-3 rounded-lg ${colorClass} bg-opacity-10`}>
         {icon}
       </div>
       {trend && (
-        <div className={`flex items-center gap-1 text-sm ${trend === 'up' ? 'text-green-400' : trend === 'down' ? 'text-red-400' : 'text-slate-400'
+        <div className={`flex items-center gap-1 text-sm ${trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-500'
           }`}>
           {trend === 'up' && <TrendingUp className="w-4 h-4" />}
           {trend === 'down' && <TrendingDown className="w-4 h-4" />}
         </div>
       )}
     </div>
-    <h3 className="text-slate-400 text-sm font-medium mb-1">{title}</h3>
-    <p className="text-2xl font-bold text-white mb-1">{value}</p>
-    {subtitle && <p className="text-slate-500 text-sm">{subtitle}</p>}
+    <h3 className="text-gray-600 text-sm font-medium mb-1">{title}</h3>
+    <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
+    {subtitle && <p className="text-gray-500 text-sm">{subtitle}</p>}
   </div>
 );
 
@@ -64,27 +64,27 @@ const StatusBadge: React.FC<{ status: TransactionStatusEnum }> = ({ status }) =>
   const config = {
     [TransactionStatusEnum.SUCCESS]: {
       icon: <CheckCircle2 className="w-3.5 h-3.5" />,
-      bg: 'bg-green-500/10',
-      text: 'text-green-400',
-      border: 'border-green-500/20'
+      bg: 'bg-green-100',
+      text: 'text-green-700',
+      border: 'border-green-200'
     },
     [TransactionStatusEnum.PENDING]: {
       icon: <Clock className="w-3.5 h-3.5" />,
-      bg: 'bg-yellow-500/10',
-      text: 'text-yellow-400',
-      border: 'border-yellow-500/20'
+      bg: 'bg-yellow-100',
+      text: 'text-yellow-700',
+      border: 'border-yellow-200'
     },
     [TransactionStatusEnum.FAILED]: {
       icon: <XCircle className="w-3.5 h-3.5" />,
-      bg: 'bg-red-500/10',
-      text: 'text-red-400',
-      border: 'border-red-500/20'
+      bg: 'bg-red-100',
+      text: 'text-red-700',
+      border: 'border-red-200'
     },
     [TransactionStatusEnum.REVERSED]: {
       icon: <RotateCcw className="w-3.5 h-3.5" />,
-      bg: 'bg-purple-500/10',
-      text: 'text-purple-400',
-      border: 'border-purple-500/20'
+      bg: 'bg-purple-100',
+      text: 'text-purple-700',
+      border: 'border-purple-200'
     },
   };
 
@@ -103,12 +103,12 @@ const TransactionTypeIcon: React.FC<{ type: TransactionTypeEnum; isCredit: boole
   const iconClass = "w-5 h-5";
 
   if (type === TransactionTypeEnum.DEPOSIT) {
-    return <ArrowDownLeft className={`${iconClass} text-green-400`} />;
+    return <ArrowDownLeft className={`${iconClass} text-green-600`} />;
   }
   if (type === TransactionTypeEnum.WITHDRAWAL) {
-    return <ArrowUpRight className={`${iconClass} text-red-400`} />;
+    return <ArrowUpRight className={`${iconClass} text-red-600`} />;
   }
-  return <ArrowLeftRight className={`${iconClass} text-blue-400`} />;
+  return <ArrowLeftRight className={`${iconClass} text-blue-600`} />;
 };
 
 // Transaction Item Component
@@ -127,30 +127,30 @@ const TransactionItem: React.FC<{
   return (
     <div
       onClick={onClick}
-      className="bg-slate-800 hover:bg-slate-750 rounded-lg p-4 border border-slate-700 hover:border-slate-600 cursor-pointer transition-all group"
+      className="bg-white hover:bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 cursor-pointer transition-all group "
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className={`p-2.5 rounded-lg ${transaction.is_credit ? 'bg-green-500/10' : 'bg-red-500/10'
+          <div className={`p-2.5 rounded-lg ${transaction.is_credit ? 'bg-green-50' : 'bg-red-50'
             }`}>
             <TransactionTypeIcon type={transaction.transaction_type} isCredit={transaction.is_credit} />
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-white font-medium truncate">
+              <h3 className="text-gray-900 font-medium truncate">
                 {transaction.transaction_type_display}
               </h3>
               {transaction.is_reversal && (
-                <span className="text-xs text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
+                <span className="text-xs text-purple-700 bg-purple-100 px-2 py-0.5 rounded">
                   Reversal
                 </span>
               )}
             </div>
-            <p className="text-slate-400 text-sm truncate mb-1">
+            <p className="text-gray-600 text-sm truncate mb-1">
               {transaction.narration || 'No description'}
             </p>
-            <div className="flex items-center gap-3 text-xs text-slate-500">
+            <div className="flex items-center gap-3 text-xs text-gray-500">
               <span>{formattedDate}</span>
               <span>•</span>
               <span className="truncate">Ref: {transaction.reference}</span>
@@ -160,18 +160,19 @@ const TransactionItem: React.FC<{
 
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className={`text-lg font-semibold ${transaction.is_credit ? 'text-green-400' : 'text-red-400'
+            <p className={`text-lg font-semibold ${transaction.is_credit ? 'text-green-600' : 'text-red-600'
               }`}>
-              {transaction.display_amount}
+              {(transaction.transaction_type == "deposit" && ['deposit', 'withdrawal'].includes(transaction.transaction_type)) ? "+" : "-"}
+              {transaction.amount}
             </p>
             {transaction.has_fees && (
-              <p className="text-xs text-slate-500">Fee: ₦{parseFloat(transaction.fees).toLocaleString()}</p>
+              <p className="text-xs text-gray-500">Fee: ₦{parseFloat(transaction.fees).toLocaleString()}</p>
             )}
           </div>
 
           <StatusBadge status={transaction.status} />
 
-          <Eye className="w-4 h-4 text-slate-500 group-hover:text-slate-400 transition-colors" />
+          <Eye className="w-4 h-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
         </div>
       </div>
     </div>
@@ -213,39 +214,39 @@ const TransactionDetailModal: React.FC<{
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-700">
-        <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-6 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white">Transaction Details</h2>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-300 shadow-xl">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">Transaction Details</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 
         <div className="p-6 space-y-6">
-          <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-slate-400 text-sm">Transaction Amount</span>
+              <span className="text-gray-600 text-sm">Transaction Amount</span>
               <TransactionTypeIcon type={transaction.transaction_type} isCredit={transaction.is_credit} />
             </div>
-            <p className={`text-3xl font-bold ${transaction.is_credit ? 'text-green-400' : 'text-red-400'
+            <p className={`text-3xl font-bold ${transaction.is_credit ? 'text-green-600' : 'text-red-600'
               }`}>
               {transaction.display_amount}
             </p>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">
               General Information
             </h3>
             <div className="space-y-3">
               {detailRows.map((row, idx) => (
-                <div key={idx} className="flex justify-between items-start py-2 border-b border-slate-700/50">
-                  <span className="text-slate-400 text-sm">{row.label}</span>
-                  <span className="text-white text-sm font-medium text-right">{row.value}</span>
+                <div key={idx} className="flex justify-between items-start py-2 border-b border-gray-200">
+                  <span className="text-gray-600 text-sm">{row.label}</span>
+                  <span className="text-gray-900 text-sm font-medium text-right">{row.value}</span>
                 </div>
               ))}
             </div>
@@ -253,14 +254,14 @@ const TransactionDetailModal: React.FC<{
 
           {bankDetails.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">
                 Bank Details
               </h3>
               <div className="space-y-3">
                 {bankDetails.map((row, idx) => (
-                  <div key={idx} className="flex justify-between items-start py-2 border-b border-slate-700/50">
-                    <span className="text-slate-400 text-sm">{row.label}</span>
-                    <span className="text-white text-sm font-medium text-right">{row.value}</span>
+                  <div key={idx} className="flex justify-between items-start py-2 border-b border-gray-200">
+                    <span className="text-gray-600 text-sm">{row.label}</span>
+                    <span className="text-gray-900 text-sm font-medium text-right">{row.value}</span>
                   </div>
                 ))}
               </div>
@@ -269,10 +270,10 @@ const TransactionDetailModal: React.FC<{
 
           {transaction.narration && (
             <div>
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">
                 Description
               </h3>
-              <p className="text-white text-sm bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+              <p className="text-gray-900 text-sm bg-gray-50 rounded-lg p-4 border border-gray-200">
                 {transaction.narration}
               </p>
             </div>
@@ -292,22 +293,22 @@ const TransactionFilters: React.FC<{
   const [showFilters, setShowFilters] = useState(false);
 
   return (
-    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+    <div className="bg-white rounded-xl p-4 border border-gray-200 ">
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
           <input
             type="text"
             placeholder="Search transactions..."
             value={filters.search || ''}
             onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
-            className="w-full bg-slate-900 text-white rounded-lg pl-10 pr-4 py-2.5 border border-slate-700 focus:border-blue-500 focus:outline-none transition-colors"
+            className="w-full bg-gray-50 text-gray-900 rounded-lg pl-10 pr-4 py-2.5 border border-gray-300 focus:border-blue-500 focus:outline-none transition-colors"
           />
         </div>
 
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition-colors"
         >
           <Filter className="w-5 h-5" />
           Filters
@@ -321,7 +322,7 @@ const TransactionFilters: React.FC<{
         {Object.keys(filters).length > 0 && (
           <button
             onClick={onReset}
-            className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
+            className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors"
           >
             Reset
           </button>
@@ -329,16 +330,16 @@ const TransactionFilters: React.FC<{
       </div>
 
       {showFilters && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-700">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
           <div>
-            <label className="text-sm text-slate-400 mb-2 block">Transaction Type</label>
+            <label className="text-sm text-gray-600 mb-2 block">Transaction Type</label>
             <select
               value={filters.transaction_type?.[0] || ''}
               onChange={(e) => onFilterChange({
                 ...filters,
                 transaction_type: e.target.value ? [e.target.value as TransactionTypeEnum] : undefined
               })}
-              className="w-full bg-slate-900 text-white rounded-lg px-3 py-2 border border-slate-700 focus:border-blue-500 focus:outline-none"
+              className="w-full bg-gray-50 text-gray-900 rounded-lg px-3 py-2 border border-gray-300 focus:border-blue-500 focus:outline-none"
             >
               <option value="">All Types</option>
               <option value={TransactionTypeEnum.DEPOSIT}>Deposit</option>
@@ -348,14 +349,14 @@ const TransactionFilters: React.FC<{
           </div>
 
           <div>
-            <label className="text-sm text-slate-400 mb-2 block">Status</label>
+            <label className="text-sm text-gray-600 mb-2 block">Status</label>
             <select
               value={filters.status?.[0] || ''}
               onChange={(e) => onFilterChange({
                 ...filters,
                 status: e.target.value ? [e.target.value as TransactionStatusEnum] : undefined
               })}
-              className="w-full bg-slate-900 text-white rounded-lg px-3 py-2 border border-slate-700 focus:border-blue-500 focus:outline-none"
+              className="w-full bg-gray-50 text-gray-900 rounded-lg px-3 py-2 border border-gray-300 focus:border-blue-500 focus:outline-none"
             >
               <option value="">All Status</option>
               <option value={TransactionStatusEnum.SUCCESS}>Success</option>
@@ -366,11 +367,11 @@ const TransactionFilters: React.FC<{
           </div>
 
           <div>
-            <label className="text-sm text-slate-400 mb-2 block">Sort By</label>
+            <label className="text-sm text-gray-600 mb-2 block">Sort By</label>
             <select
               value={filters.ordering || '-created_at'}
               onChange={(e) => onFilterChange({ ...filters, ordering: e.target.value })}
-              className="w-full bg-slate-900 text-white rounded-lg px-3 py-2 border border-slate-700 focus:border-blue-500 focus:outline-none"
+              className="w-full bg-gray-50 text-gray-900 rounded-lg px-3 py-2 border border-gray-300 focus:border-blue-500 focus:outline-none"
             >
               <option value="-created_at">Newest First</option>
               <option value="created_at">Oldest First</option>
@@ -451,16 +452,16 @@ const TransactionHistoryPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Transaction History</h1>
-            <p className="text-slate-400">Track and manage all your transactions</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Transaction History</h1>
+            <p className="text-gray-600">Track and manage all your transactions</p>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1 border border-slate-700">
+          <div className="flex items-center gap-2 bg-white rounded-lg p-1 border border-gray-200 ">
             {[
               { label: 'Today', value: TransactionPeriodEnum.TODAY },
               { label: 'Week', value: TransactionPeriodEnum.WEEK },
@@ -472,7 +473,7 @@ const TransactionHistoryPage: React.FC = () => {
                 onClick={() => setSelectedPeriod(period.value)}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedPeriod === period.value
                     ? 'bg-blue-500 text-white'
-                    : 'text-slate-400 hover:text-white'
+                    : 'text-gray-600 hover:text-gray-900'
                   }`}
               >
                 {period.label}
@@ -485,7 +486,7 @@ const TransactionHistoryPage: React.FC = () => {
         {statsLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-slate-800 rounded-xl p-6 border border-slate-700 animate-pulse">
+              <div key={i} className="bg-white rounded-xl p-6 border border-gray-200 animate-pulse">
                 <div className="h-24"></div>
               </div>
             ))}
@@ -496,32 +497,32 @@ const TransactionHistoryPage: React.FC = () => {
               title="Current Balance"
               value={formatCurrency(stats.current_balance)}
               subtitle={`${stats.overview.total_transactions} transactions`}
-              icon={<DollarSign className="w-6 h-6 text-blue-400" />}
-              colorClass="text-blue-400"
+              icon={<DollarSign className="w-6 h-6 text-blue-600" />}
+              colorClass="text-blue-600"
             />
             <StatsCard
               title="Total Inflow"
               value={formatCurrency(stats.cash_flow.total_inflow)}
               subtitle={`${stats.deposits.count} deposits`}
-              icon={<ArrowDownLeft className="w-6 h-6 text-green-400" />}
+              icon={<ArrowDownLeft className="w-6 h-6 text-green-600" />}
               trend="up"
-              colorClass="text-green-400"
+              colorClass="text-green-600"
             />
             <StatsCard
               title="Total Outflow"
               value={formatCurrency(stats.cash_flow.total_outflow)}
               subtitle={`${stats.withdrawals.count} withdrawals`}
-              icon={<ArrowUpRight className="w-6 h-6 text-red-400" />}
+              icon={<ArrowUpRight className="w-6 h-6 text-red-600" />}
               trend="down"
-              colorClass="text-red-400"
+              colorClass="text-red-600"
             />
             <StatsCard
               title="Net Flow"
               value={formatCurrency(stats.cash_flow.net_flow)}
               subtitle={`${stats.fees.total_fees} in fees`}
-              icon={<TrendingUp className="w-6 h-6 text-purple-400" />}
+              icon={<TrendingUp className="w-6 h-6 text-purple-600" />}
               trend={parseFloat(stats.cash_flow.net_flow) >= 0 ? 'up' : 'down'}
-              colorClass="text-purple-400"
+              colorClass="text-purple-600"
             />
           </div>
         )}
@@ -534,11 +535,11 @@ const TransactionHistoryPage: React.FC = () => {
         />
 
         {/* Transactions List */}
-        <div className="bg-slate-800 rounded-xl border border-slate-700">
-          <div className="p-6 border-b border-slate-700">
+        <div className="bg-white rounded-xl border border-gray-200 ">
+          <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">Transactions</h2>
-              <p className="text-slate-400 text-sm">
+              <h2 className="text-xl font-bold text-gray-900">Transactions</h2>
+              <p className="text-gray-600 text-sm">
                 {pagination.count} total transactions
               </p>
             </div>
@@ -548,18 +549,18 @@ const TransactionHistoryPage: React.FC = () => {
             {loading ? (
               <div className="space-y-3">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="bg-slate-700 rounded-lg p-4 animate-pulse">
+                  <div key={i} className="bg-gray-100 rounded-lg p-4 animate-pulse">
                     <div className="h-20"></div>
                   </div>
                 ))}
               </div>
             ) : transactions.length === 0 ? (
               <div className="text-center py-16">
-                <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <DollarSign className="w-8 h-8 text-slate-500" />
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <DollarSign className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">No transactions found</h3>
-                <p className="text-slate-400">Try adjusting your filters or make your first transaction</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No transactions found</h3>
+                <p className="text-gray-600">Try adjusting your filters or make your first transaction</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -576,24 +577,24 @@ const TransactionHistoryPage: React.FC = () => {
 
           {/* Pagination */}
           {!loading && transactions.length > 0 && (
-            <div className="p-4 border-t border-slate-700 flex items-center justify-between">
+            <div className="p-4 border-t border-gray-200 flex items-center justify-between">
               <button
                 onClick={() => handlePageChange((filters.page || 1) - 1)}
                 disabled={!pagination.previous}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-800 rounded-lg transition-colors disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="w-4 h-4" />
                 Previous
               </button>
 
-              <span className="text-slate-400 text-sm">
+              <span className="text-gray-600 text-sm">
                 Page {filters.page || 1}
               </span>
 
               <button
                 onClick={() => handlePageChange((filters.page || 1) + 1)}
                 disabled={!pagination.next}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-800 rounded-lg transition-colors disabled:cursor-not-allowed"
               >
                 Next
                 <ChevronRight className="w-4 h-4" />
